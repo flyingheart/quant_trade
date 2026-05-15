@@ -1,0 +1,47 @@
+[package]
+name = "quant-trade"
+version = "0.1.0"
+description = "量化策略回测工具"
+authors = ["you"]
+license = ""
+repository = ""
+edition = "2021"
+rust-version = "1.77.2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.1", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.11.1", features = [] }
+tauri-plugin-log = "2"
+
+# 异步运行时
+tokio = { version = "1", features = ["full"] }
+
+# 向量化计算
+polars = { version = "0.44", features = ["lazy", "json", "parquet", "csv", "temporal"] }
+
+# JS 沙箱
+deno_core = "0.311"
+
+# 本地数据库
+duckdb = { version = "1.1", features = ["bundled"] }
+
+# 错误处理
+thiserror = "2"
+anyhow = "1"
+
+# HTTP 客户端
+reqwest = { version = "0.12", features = ["json"] }
+
+# 时间处理
+chrono = { version = "0.4", features = ["serde"] }

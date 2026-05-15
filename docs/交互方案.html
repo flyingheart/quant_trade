@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>量化回测工具 - 交互界面方案 v2</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0d0e15;
+      color: #a9b1d6;
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      padding: 12px;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* 顶部栏 */
+    .top-bar {
+      height: 44px;
+      background: linear-gradient(135deg, #1a1b26 0%, #1f2335 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      justify-content: space-between;
+      border: 1px solid #2a2d3e;
+      flex-shrink: 0;
+    }
+
+    .top-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, #7aa2f7, #bb9af7);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #1a1b26;
+    }
+
+    .top-bar h2 {
+      font-size: 15px;
+      color: #c0caf5;
+      font-weight: 600;
+    }
+
+    .top-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      background: #24283b;
+      border: 1px solid #363b54;
+      border-radius: 6px;
+      color: #9aa4ce;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      font-size: 16px;
+    }
+
+    .btn-icon:hover {
+      background: #363b54;
+      color: #c0caf5;
+    }
+
+    .btn-icon.active {
+      background: #7aa2f7;
+      color: #1a1b26;
+      border-color: #7aa2f7;
+    }
+
+    /* 主内容区 */
+    .main {
+      flex: 1;
+      display: flex;
+      gap: 8px;
+      min-height: 0;
+    }
+
+    /* 左侧面板 */
+    .left-panel {
+      width: 280px;
+      background: linear-gradient(180deg, #1a1b26 0%, #1f2335 100%);
+      border-radius: 8px;
+      padding: 14px;
+      overflow-y: auto;
+      border: 1px solid #2a2d3e;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
+    }
+
+    .left-panel.collapsed {
+      width: 0;
+      padding: 0;
+      opacity: 0;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #2a2d3e;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #c0caf5;
+    }
+
+    .panel-badge {
+      font-size: 10px;
+      background: #7aa2f7;
+      color: #1a1b26;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    /* 表单元素 */
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #9aa4ce;
+      margin-bottom: 4px;
+    }
+
+    .form-label .hint {
+      color: #545c7e;
+      font-size: 10px;
+    }
+
+    .form-input,
+    .form-select {
+      width: 100%;
+      background: #0d0e15;
+      color: #c0caf5;
+      border: 1px solid #2a2d3e;
+      border-radius: 6px;
+      padding: 7px 10px;
+      outline: none;
+      font-size: 12px;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+      border-color: #7aa2f7;
+    }
+
+    .form-input::placeholder {
+      color: #545c7e;
+    }
+
+    /* 滑块 */
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .slider {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 4px;
+      background: #2a2d3e;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #7aa2f7;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .slider-value {
+      min-width: 36px;
+      text-align: right;
+      font-size: 12px;
+      color: #c0caf5;
+      font-weight: 500;
+    }
+
+    /* 开关 */
+    .toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+    }
+
+    .toggle-switch {
+      width: 36px;
+      height: 20px;
+      background: #2a2d3e;
+      border-radius: 10px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle-switch.active {
+      background: #7aa2f7;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: #c0caf5;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+    }
+
+    .toggle-switch.active::after {
+      transform: translateX(16px);
+    }
+
+    /* 按钮 */
+    .btn-primary {
+      background: linear-gradient(135deg, #7aa2f7 0%, #5d87e5 100%);
+      color: #1a1b26;
+      border: none;
+      border-radius: 6px;
+      padding: 9px 0;
+      width: 100%;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(122, 162, 247, 0.3);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: #24283b;
+      color: #c0caf5;
+      border: 1px solid #363b54;
+      border-radius: 6px;
+      padding: 8px 0;
+      width: 100%;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 6px;
+    }
+
+    .btn-secondary:hover {
+      background: #363b54;
+    }
+
+    /* 进度条 */
+    .progress-container {
+      margin-top: 10px;
+      display: none;
+    }
+
+    .progress-container.active {
+      display: block;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .progress-text {
+      font-size: 11px;
+      color: #9aa4ce;
+    }
+
+    .progress-percent {
+      font-size: 11px;
+      color: #7aa2f7;
+      font-weight: 600;
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: #2a2d3e;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #7aa2f7, #bb9af7);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .btn-cancel {
+      background: transparent;
+      color: #f7768e;
+      border: 1px solid #f7768e;
+      border-radius: 6px;
+      padding: 6px 0;
+      width: 100%;
+      font-size: 11px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: all 0.2s;
+      display: none;
+    }
+
+    .btn-cancel.active {
+      display: block;
+    }
+
+    .btn-cancel:hover {
+      background: #f7768e;
+      color: #1a1b26;
+    }
+
+    /* 中间图表区 */
+    .center-panel {
+      flex: 1;
+      background: linear-gradient(180deg, #1a1b26 0%, #1f2335 100%);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #2a2d3e;
+      min-width: 0;
+    }
+
+    .chart-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+
+    .chart-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chart-toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toolbar-btn {
+      padding: 5px 10px;
+      background: #24283b;
+      border: 1px solid #2a2d3e;
+      border-radius: 4px;
+      color: #9aa4ce;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .toolbar-btn:hover {
+      background: #363b54;
+      color: #c0caf5;
+    }
+
+    .toolbar-btn.active {
+      background: #7aa2f7;
+      color: #1a1b26;
+      border-color: #7aa2f7;
+    }
+
+    .chart-area {
+      flex: 1;
+      background: #0d0e15;
+      border-radius: 6px;
+      position: relative;
+      border: 1px solid #2a2d3e;
+      overflow: hidden;
+    }
+
+    /* K线模拟 */
+    .chart-canvas {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .candlestick {
+      position: absolute;
+      width: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .candle-wick {
+      width: 1px;
+      background: #545c7e;
+    }
+
+    .candle-body {
+      width: 100%;
+      min-height: 4px;
+      border-radius: 1px;
+    }
+
+    .candle-up .candle-body {
+      background: #9ece6a;
+    }
+
+    .candle-up .candle-wick {
+      background: #9ece6a;
+    }
+
+    .candle-down .candle-body {
+      background: #f7768e;
+    }
+
+    .candle-down .candle-wick {
+      background: #f7768e;
+    }
+
+    /* 信号标记 */
+    .signal-marker {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+      z-index: 10;
+    }
+
+    .signal-marker:hover {
+      transform: scale(1.3);
+    }
+
+    .signal-buy {
+      background: #9ece6a;
+      color: #1a1b26;
+    }
+
+    .signal-sell {
+      background: #f7768e;
+      color: #1a1b26;
+    }
+
+    .signal-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1f2335;
+      border: 1px solid #363b54;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 11px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      margin-bottom: 6px;
+      z-index: 20;
+    }
+
+    .signal-marker:hover .signal-tooltip {
+      opacity: 1;
+    }
+
+    .tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 2px;
+    }
+
+    .tooltip-label {
+      color: #9aa4ce;
+    }
+
+    .tooltip-value {
+      color: #c0caf5;
+      font-weight: 500;
+    }
+
+    /* 右侧面板 */
+    .right-panel {
+      width: 340px;
+      background: linear-gradient(180deg, #1a1b26 0%, #1f2335 100%);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #2a2d3e;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
+    }
+
+    .right-panel.collapsed {
+      width: 0;
+      opacity: 0;
+      overflow: hidden;
+    }
+
+    .editor-tabs {
+      display: flex;
+      border-bottom: 1px solid #2a2d3e;
+      flex-shrink: 0;
+    }
+
+    .editor-tab {
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #9aa4ce;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .editor-tab:hover {
+      color: #c0caf5;
+    }
+
+    .editor-tab.active {
+      color: #7aa2f7;
+      border-bottom-color: #7aa2f7;
+    }
+
+    .code-area {
+      flex: 1;
+      background: #0d0e15;
+      padding: 12px;
+      color: #c0caf5;
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      resize: none;
+      outline: none;
+      border: none;
+      min-height: 0;
+    }
+
+    .code-area::selection {
+      background: #363b54;
+    }
+
+    /* 代码高亮模拟 */
+    .code-line {
+      display: flex;
+    }
+
+    .line-number {
+      color: #545c7e;
+      min-width: 28px;
+      text-align: right;
+      margin-right: 12px;
+      user-select: none;
+    }
+
+    .code-keyword {
+      color: #bb9af7;
+    }
+
+    .code-function {
+      color: #7aa2f7;
+    }
+
+    .code-string {
+      color: #9ece6a;
+    }
+
+    .code-comment {
+      color: #545c7e;
+      font-style: italic;
+    }
+
+    .code-const {
+      color: #ff9e64;
+    }
+
+    /* 底部面板 */
+    .bottom-panel {
+      height: 220px;
+      background: linear-gradient(180deg, #1a1b26 0%, #1f2335 100%);
+      border-radius: 8px;
+      padding: 14px;
+      border: 1px solid #2a2d3e;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .result-tabs {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #2a2d3e;
+      flex-shrink: 0;
+    }
+
+    .result-tab {
+      font-size: 12px;
+      padding: 6px 0;
+      color: #9aa4ce;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .result-tab:hover {
+      color: #c0caf5;
+    }
+
+    .result-tab.active {
+      color: #7aa2f7;
+      border-bottom-color: #7aa2f7;
+    }
+
+    .result-content {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    /* 收益概览 */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .stat-item {
+      background: #0d0e15;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #2a2d3e;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: #9aa4ce;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 15px;
+      color: #c0caf5;
+      font-weight: 600;
+    }
+
+    .profit {
+      color: #9ece6a;
+    }
+
+    .loss {
+      color: #f7768e;
+    }
+
+    /* 收益曲线模拟 */
+    .equity-curve {
+      height: 100%;
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      padding: 10px 0;
+    }
+
+    .curve-bar {
+      flex: 1;
+      background: linear-gradient(180deg, #7aa2f7 0%, #5d87e5 100%);
+      border-radius: 2px 2px 0 0;
+      min-height: 4px;
+      transition: height 0.3s;
+    }
+
+    /* 交易明细表格 */
+    .trade-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .trade-table th {
+      text-align: left;
+      padding: 6px 8px;
+      color: #9aa4ce;
+      font-weight: 500;
+      border-bottom: 1px solid #2a2d3e;
+      position: sticky;
+      top: 0;
+      background: #1a1b26;
+    }
+
+    .trade-table td {
+      padding: 6px 8px;
+      color: #c0caf5;
+      border-bottom: 1px solid #1f2335;
+    }
+
+    .trade-table tr:hover td {
+      background: #1f2335;
+    }
+
+    .trade-type-buy {
+      color: #9ece6a;
+      font-weight: 500;
+    }
+
+    .trade-type-sell {
+      color: #f7768e;
+      font-weight: 500;
+    }
+
+    /* 运行日志 */
+    .log-list {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .log-item {
+      display: flex;
+      gap: 8px;
+    }
+
+    .log-time {
+      color: #545c7e;
+      min-width: 70px;
+    }
+
+    .log-level {
+      min-width: 40px;
+      font-weight: 500;
+    }
+
+    .log-info {
+      color: #7aa2f7;
+    }
+
+    .log-warn {
+      color: #e0af68;
+    }
+
+    .log-error {
+      color: #f7768e;
+    }
+
+    .log-message {
+      color: #c0caf5;
+    }
+
+    /* 滚动条 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #2a2d3e;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #363b54;
+    }
+
+    /* 分隔线 */
+    .divider {
+      height: 1px;
+      background: #2a2d3e;
+      margin: 10px 0;
+    }
+
+    /* 状态指示器 */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    .status-ready {
+      background: #9ece6a;
+    }
+
+    .status-running {
+      background: #e0af68;
+      animation: pulse 1.5s infinite;
+    }
+
+    .status-error {
+      background: #f7768e;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* 空状态 */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #545c7e;
+      font-size: 12px;
+    }
+
+    .empty-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+      opacity: 0.5;
+    }
+
+    /* 响应式 */
+    @media (max-width: 1200px) {
+      .left-panel {
+        width: 240px;
+      }
+      .right-panel {
+        width: 280px;
+      }
+      .stat-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- 顶部栏 -->
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <div class="logo">Q</div>
+        <h2>量化策略回测工具</h2>
+        <span class="status-dot status-ready"></span>
+        <span style="font-size: 11px; color: #9aa4ce;">就绪</span>
+      </div>
+      <div class="top-bar-right">
+        <button class="btn-icon" title="导入数据" onclick="alert('导入数据')">📁</button>
+        <button class="btn-icon" title="策略库" onclick="alert('策略库')">📚</button>
+        <button class="btn-icon" title="设置" onclick="alert('设置')">⚙️</button>
+        <button class="btn-icon" id="btnLeftPanel" title="切换参数面板" onclick="toggleLeftPanel()">◧</button>
+        <button class="btn-icon" id="btnRightPanel" title="切换编辑器" onclick="toggleRightPanel()">▣</button>
+      </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main">
+      <!-- 左侧参数面板 -->
+      <div class="left-panel" id="leftPanel">
+        <div class="panel-header">
+          <span class="panel-title">参数配置</span>
+          <span class="panel-badge">Auto-UI</span>
+        </div>
+
+        <!-- 基础设置 -->
+        <div class="form-group">
+          <div class="form-label">
+            <span>交易标的</span>
+          </div>
+          <select class="form-select">
+            <option>贵州茅台 (600519)</option>
+            <option>腾讯控股 (00700)</option>
+            <option>Apple (AAPL)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">
+            <span>初始资金</span>
+            <span class="hint">CNY</span>
+          </div>
+          <input class="form-input" type="number" value="1000000">
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">
+            <span>手续费率</span>
+            <span class="hint">单边</span>
+          </div>
+          <input class="form-input" type="number" value="0.0003" step="0.0001">
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 策略参数 -->
+        <div class="form-group">
+          <div class="form-label">
+            <span>MA 快线周期</span>
+            <span class="hint">5-50</span>
+          </div>
+          <div class="slider-container">
+            <input class="slider" type="range" min="5" max="50" value="5" oninput="updateSlider(this, 'maFastVal')">
+            <span class="slider-value" id="maFastVal">5</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">
+            <span>MA 慢线周期</span>
+            <span class="hint">10-200</span>
+          </div>
+          <div class="slider-container">
+            <input class="slider" type="range" min="10" max="200" value="20" oninput="updateSlider(this, 'maSlowVal')">
+            <span class="slider-value" id="maSlowVal">20</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">
+            <span>RSI 周期</span>
+            <span class="hint">6-30</span>
+          </div>
+          <div class="slider-container">
+            <input class="slider" type="range" min="6" max="30" value="14" oninput="updateSlider(this, 'rsiVal')">
+            <span class="slider-value" id="rsiVal">14</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 开关 -->
+        <div class="toggle">
+          <span style="font-size: 11px; color: #9aa4ce;">启用止损</span>
+          <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+        </div>
+
+        <div class="toggle">
+          <span style="font-size: 11px; color: #9aa4ce;">启用止盈</span>
+          <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+        </div>
+
+        <div class="form-group" style="margin-top: 8px;">
+          <div class="form-label"><span>止损比例</span></div>
+          <input class="form-input" type="number" value="0.05" step="0.01">
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 按钮组 -->
+        <button class="btn-primary" id="btnRun" onclick="runBacktest()">
+          ▶ 运行回测
+        </button>
+        <div class="progress-container" id="progressContainer">
+          <div class="progress-header">
+            <span class="progress-text">回测进行中...</span>
+            <span class="progress-percent" id="progressPercent">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+        <button class="btn-cancel" id="btnCancel" onclick="cancelBacktest()">取消回测</button>
+        <button class="btn-secondary" onclick="resetParams()">↺ 重置参数</button>
+        <button class="btn-secondary" style="margin-top: 4px;">💾 保存配置</button>
+      </div>
+
+      <!-- 中间图表区 -->
+      <div class="center-panel">
+        <div class="chart-toolbar">
+          <div class="chart-toolbar-left">
+            <span style="font-size: 13px; font-weight: 600; color: #c0caf5;">贵州茅台 (600519)</span>
+            <span style="font-size: 11px; color: #9aa4ce;">日线</span>
+          </div>
+          <div class="chart-toolbar-right">
+            <button class="toolbar-btn">1分</button>
+            <button class="toolbar-btn">5分</button>
+            <button class="toolbar-btn">15分</button>
+            <button class="toolbar-btn">1时</button>
+            <button class="toolbar-btn active">日线</button>
+            <span style="width: 1px; height: 16px; background: #2a2d3e;"></span>
+            <button class="toolbar-btn">MA</button>
+            <button class="toolbar-btn">BOLL</button>
+            <button class="toolbar-btn">指标</button>
+          </div>
+        </div>
+        <div class="chart-area">
+          <div class="chart-canvas" id="chartCanvas">
+            <!-- K线模拟数据 -->
+          </div>
+          <!-- 信号标记示例 -->
+          <div class="signal-marker signal-buy" style="left: 15%; bottom: 45%;">
+            B
+            <div class="signal-tooltip">
+              <div class="tooltip-row">
+                <span class="tooltip-label">买入信号</span>
+              </div>
+              <div class="tooltip-row">
+                <span class="tooltip-label">价格</span>
+                <span class="tooltip-value">¥1,680.00</span>
+              </div>
+              <div class="tooltip-row">
+                <span class="tooltip-label">时间</span>
+                <span class="tooltip-value">2024-03-15</span>
+              </div>
+              <div class="tooltip-row">
+                <span class="tooltip-label">原因</span>
+                <span class="tooltip-value">MA5 上穿 MA20</span>
+              </div>
+            </div>
+          </div>
+          <div class="signal-marker signal-sell" style="left: 35%; bottom: 65%;">
+            S
+            <div class="signal-tooltip">
+              <div class="tooltip-row">
+                <span class="tooltip-label">卖出信号</span>
+              </div>
+              <div class="tooltip-row">
+                <span class="tooltip-label">价格</span>
+                <span class="tooltip-value">¥1,820.00</span>
+              </div>
+              <div class="tooltip-row">
+                <span class="tooltip-label">盈亏</span>
+                <span class="tooltip-value profit">+8.33%</span>
+              </div>
+            </div>
+          </div>
+          <div class="signal-marker signal-buy" style="left: 55%; bottom: 35%;">
+            B
+            <div class="signal-tooltip">
+              <div class="tooltip-row">
+                <span class="tooltip-label">买入信号</span>
+              </div>
+              <div class="tooltip-row">
+                <span class="tooltip-label">价格</span>
+                <span class="tooltip-value">¥1,560.00</span>
+              </div>
+            </div>
+          </div>
+          <div class="signal-marker signal-sell" style="left: 75%; bottom: 55%;">
+            S
+            <div class="signal-tooltip">
+              <div class="tooltip-row">
+                <span class="tooltip-label">卖出信号</span>
+              </div>
+              <div class="tooltip-row">
+                <span class="tooltip-label">价格</span>
+                <span class="tooltip-value">¥1,720.00</span>
+              </div>
+              <div class="tooltip-row">
+                <span class="tooltip-label">盈亏</span>
+                <span class="tooltip-value profit">+10.26%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧编辑器 -->
+      <div class="right-panel" id="rightPanel">
+        <div class="editor-tabs">
+          <div class="editor-tab active" onclick="switchEditorTab(this, 'code')">策略代码</div>
+          <div class="editor-tab" onclick="switchEditorTab(this, 'template')">模板库</div>
+          <div class="editor-tab" onclick="switchEditorTab(this, 'history')">历史版本</div>
+        </div>
+        <div class="code-area" id="editorContent">// @param ma_fast number=5 快线周期
+// @param ma_slow number=20 慢线周期
+// @param rsi_period number=14 RSI周期
+// @param enable_stop_loss bool=true 启用止损
+
+function run() {
+  const maFast = MA(CLOSE, ma_fast);
+  const maSlow = MA(CLOSE, ma_slow);
+  
+  // 金叉买入
+  if (CROSS(maFast, maSlow)) {
+    return BUY;
+  }
+  
+  // 死叉卖出
+  if (CROSS(maSlow, maFast)) {
+    return SELL;
+  }
+  
+  return HOLD;
+}</div>
+      </div>
+    </div>
+
+    <!-- 底部结果区 -->
+    <div class="bottom-panel">
+      <div class="result-tabs">
+        <div class="result-tab active" onclick="switchResultTab(this, 'overview')">收益概览</div>
+        <div class="result-tab" onclick="switchResultTab(this, 'curve')">收益曲线</div>
+        <div class="result-tab" onclick="switchResultTab(this, 'trades')">交易明细</div>
+        <div class="result-tab" onclick="switchResultTab(this, 'logs')">运行日志</div>
+      </div>
+      <div class="result-content" id="resultContent">
+        <!-- 收益概览 -->
+        <div id="tab-overview">
+          <div class="stat-grid">
+            <div class="stat-item">
+              <div class="stat-label">总收益</div>
+              <div class="stat-value profit">+28.35%</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">年化收益</div>
+              <div class="stat-value profit">+15.62%</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">最大回撤</div>
+              <div class="stat-value loss">-4.21%</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">胜率</div>
+              <div class="stat-value">63.2%</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">交易次数</div>
+              <div class="stat-value">24</div>
+            </div>
+          </div>
+        </div>
+        <!-- 收益曲线 -->
+        <div id="tab-curve" style="display: none;">
+          <div class="equity-curve" id="equityCurve"></div>
+        </div>
+        <!-- 交易明细 -->
+        <div id="tab-trades" style="display: none;">
+          <table class="trade-table">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>方向</th>
+                <th>价格</th>
+                <th>数量</th>
+                <th>盈亏</th>
+                <th>收益率</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>2024-03-15</td>
+                <td class="trade-type-buy">买入</td>
+                <td>¥1,680.00</td>
+                <td>100</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td>2024-04-02</td>
+                <td class="trade-type-sell">卖出</td>
+                <td>¥1,820.00</td>
+                <td>100</td>
+                <td class="profit">+¥14,000</td>
+                <td class="profit">+8.33%</td>
+              </tr>
+              <tr>
+                <td>2024-05-10</td>
+                <td class="trade-type-buy">买入</td>
+                <td>¥1,560.00</td>
+                <td>120</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td>2024-06-18</td>
+                <td class="trade-type-sell">卖出</td>
+                <td>¥1,720.00</td>
+                <td>120</td>
+                <td class="profit">+¥19,200</td>
+                <td class="profit">+10.26%</td>
+              </tr>
+              <tr>
+                <td>2024-07-22</td>
+                <td class="trade-type-buy">买入</td>
+                <td>¥1,650.00</td>
+                <td>110</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td>2024-08-05</td>
+                <td class="trade-type-sell">卖出</td>
+                <td>¥1,580.00</td>
+                <td>110</td>
+                <td class="loss">-¥7,700</td>
+                <td class="loss">-4.24%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- 运行日志 -->
+        <div id="tab-logs" style="display: none;">
+          <div class="log-list">
+            <div class="log-item">
+              <span class="log-time">10:23:15</span>
+              <span class="log-level log-info">INFO</span>
+              <span class="log-message">回测引擎初始化完成</span>
+            </div>
+            <div class="log-item">
+              <span class="log-time">10:23:15</span>
+              <span class="log-level log-info">INFO</span>
+              <span class="log-message">加载 K 线数据: 250 根 (2024-01-01 ~ 2024-12-31)</span>
+            </div>
+            <div class="log-item">
+              <span class="log-time">10:23:15</span>
+              <span class="log-level log-info">INFO</span>
+              <span class="log-message">策略参数: ma_fast=5, ma_slow=20, rsi=14</span>
+            </div>
+            <div class="log-item">
+              <span class="log-time">10:23:16</span>
+              <span class="log-level log-info">INFO</span>
+              <span class="log-message">开始回测...</span>
+            </div>
+            <div class="log-item">
+              <span class="log-time">10:23:16</span>
+              <span class="log-level log-info">INFO</span>
+              <span class="log-message">[2024-03-15] 买入信号触发 @ ¥1,680.00 (MA5 上穿 MA20)</span>
+            </div>
+            <div class="log-item">
+              <span class="log-time">10:23:16</span>
+              <span class="log-level log-info">INFO</span>
+              <span class="log-message">[2024-04-02] 卖出信号触发 @ ¥1,820.00 (MA5 下穿 MA20) | 盈亏: +8.33%</span>
+            </div>
+            <div class="log-item">
+              <span class="log-time">10:23:16</span>
+              <span class="log-level log-warn">WARN</span>
+              <span class="log-message">[2024-08-05] 止损触发 @ ¥1,580.00 | 亏损: -4.24%</span>
+            </div>
+            <div class="log-item">
+              <span class="log-time">10:23:17</span>
+              <span class="log-level log-info">INFO</span>
+              <span class="log-message">回测完成 | 总收益: +28.35% | 交易次数: 24 | 胜率: 63.2%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 面板折叠切换
+    function toggleLeftPanel() {
+      const panel = document.getElementById('leftPanel');
+      const btn = document.getElementById('btnLeftPanel');
+      panel.classList.toggle('collapsed');
+      btn.classList.toggle('active');
+    }
+
+    function toggleRightPanel() {
+      const panel = document.getElementById('rightPanel');
+      const btn = document.getElementById('btnRightPanel');
+      panel.classList.toggle('collapsed');
+      btn.classList.toggle('active');
+    }
+
+    // 滑块值更新
+    function updateSlider(slider, targetId) {
+      document.getElementById(targetId).textContent = slider.value;
+    }
+
+    // 回测模拟
+    let backtestInterval = null;
+
+    function runBacktest() {
+      const btn = document.getElementById('btnRun');
+      const progress = document.getElementById('progressContainer');
+      const fill = document.getElementById('progressFill');
+      const percent = document.getElementById('progressPercent');
+      const cancel = document.getElementById('btnCancel');
+      const statusDot = document.querySelector('.status-dot');
+      const statusText = statusDot.nextElementSibling;
+
+      btn.disabled = true;
+      btn.textContent = '⏳ 回测中...';
+      progress.classList.add('active');
+      cancel.classList.add('active');
+      statusDot.className = 'status-dot status-running';
+      statusText.textContent = '运行中';
+
+      let current = 0;
+      backtestInterval = setInterval(() => {
+        current += Math.random() * 15;
+        if (current >= 100) {
+          current = 100;
+          clearInterval(backtestInterval);
+          setTimeout(() => {
+            btn.disabled = false;
+            btn.textContent = '▶ 运行回测';
+            progress.classList.remove('active');
+            cancel.classList.remove('active');
+            statusDot.className = 'status-dot status-ready';
+            statusText.textContent = '就绪';
+            fill.style.width = '0%';
+          }, 500);
+        }
+        fill.style.width = current + '%';
+        percent.textContent = Math.round(current) + '%';
+      }, 200);
+    }
+
+    function cancelBacktest() {
+      if (backtestInterval) {
+        clearInterval(backtestInterval);
+        backtestInterval = null;
+      }
+      const btn = document.getElementById('btnRun');
+      const progress = document.getElementById('progressContainer');
+      const fill = document.getElementById('progressFill');
+      const percent = document.getElementById('progressPercent');
+      const cancel = document.getElementById('btnCancel');
+      const statusDot = document.querySelector('.status-dot');
+      const statusText = statusDot.nextElementSibling;
+
+      btn.disabled = false;
+      btn.textContent = '▶ 运行回测';
+      progress.classList.remove('active');
+      cancel.classList.remove('active');
+      statusDot.className = 'status-dot status-ready';
+      statusText.textContent = '就绪';
+      fill.style.width = '0%';
+      percent.textContent = '0%';
+    }
+
+    function resetParams() {
+      document.querySelectorAll('.slider').forEach(slider => {
+        slider.value = slider.defaultValue;
+        const targetId = slider.getAttribute('oninput').match(/'(\w+)'/)[1];
+        document.getElementById(targetId).textContent = slider.value;
+      });
+    }
+
+    // 编辑器标签切换
+    function switchEditorTab(tab, type) {
+      document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      const content = document.getElementById('editorContent');
+      if (type === 'code') {
+        content.textContent = `// @param ma_fast number=5 快线周期
+// @param ma_slow number=20 慢线周期
+// @param rsi_period number=14 RSI周期
+// @param enable_stop_loss bool=true 启用止损
+
+function run() {
+  const maFast = MA(CLOSE, ma_fast);
+  const maSlow = MA(CLOSE, ma_slow);
+  
+  // 金叉买入
+  if (CROSS(maFast, maSlow)) {
+    return BUY;
+  }
+  
+  // 死叉卖出
+  if (CROSS(maSlow, maFast)) {
+    return SELL;
+  }
+  
+  return HOLD;
+}`;
+      } else if (type === 'template') {
+        content.textContent = `📚 策略模板库
+
+1. 均线交叉策略
+   - 金叉买入，死叉卖出
+   - 参数: 快线周期, 慢线周期
+
+2. RSI 超买超卖
+   - RSI < 30 买入, RSI > 70 卖出
+   - 参数: RSI周期, 超买线, 超卖线
+
+3. 布林带突破
+   - 突破上轨卖出, 突破下轨买入
+   - 参数: 周期, 标准差倍数
+
+4. MACD 策略
+   - DIF 上穿 DEA 买入
+   - 参数: 快线, 慢线, 信号线
+
+点击模板加载到编辑器`;
+      } else if (type === 'history') {
+        content.textContent = `📜 历史版本
+
+v3 (当前) - 2024-12-15 10:23
+  添加止损逻辑
+
+v2 - 2024-12-14 15:30
+  调整 MA 周期 5/20
+
+v1 - 2024-12-13 09:15
+  初始版本
+
+点击版本可回滚`;
+      }
+    }
+
+    // 结果标签切换
+    function switchResultTab(tab, type) {
+      document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      document.getElementById('tab-overview').style.display = type === 'overview' ? 'block' : 'none';
+      document.getElementById('tab-curve').style.display = type === 'curve' ? 'block' : 'none';
+      document.getElementById('tab-trades').style.display = type === 'trades' ? 'block' : 'none';
+      document.getElementById('tab-logs').style.display = type === 'logs' ? 'block' : 'none';
+    }
+
+    // 生成模拟 K 线
+    function generateCandles() {
+      const canvas = document.getElementById('chartCanvas');
+      const width = canvas.offsetWidth;
+      const height = canvas.offsetHeight;
+      const candleCount = Math.floor(width / 14);
+      
+      let price = 100;
+      for (let i = 0; i < candleCount; i++) {
+        const change = (Math.random() - 0.48) * 8;
+        const open = price;
+        const close = price + change;
+        const high = Math.max(open, close) + Math.random() * 4;
+        const low = Math.min(open, close) - Math.random() * 4;
+        
+        const isUp = close >= open;
+        const x = i * 14 + 3;
+        const bodyTop = height - ((Math.max(open, close) - low + 20) / 140) * height;
+        const bodyHeight = Math.abs(change) / 140 * height;
+        const wickTop = height - ((high - low + 20) / 140) * height;
+        const wickHeight = (high - low) / 140 * height;
+        
+        const candle = document.createElement('div');
+        candle.className = `candlestick ${isUp ? 'candle-up' : 'candle-down'}`;
+        candle.style.left = x + 'px';
+        candle.style.top = wickTop + 'px';
+        candle.innerHTML = `
+          <div class="candle-wick" style="height: ${wickHeight}px;"></div>
+        `;
+        canvas.appendChild(candle);
+        
+        price = close;
+      }
+    }
+
+    // 生成收益曲线
+    function generateEquityCurve() {
+      const container = document.getElementById('equityCurve');
+      let value = 100;
+      for (let i = 0; i < 60; i++) {
+        value += (Math.random() - 0.4) * 5;
+        value = Math.max(80, Math.min(130, value));
+        const bar = document.createElement('div');
+        bar.className = 'curve-bar';
+        bar.style.height = (value - 70) + '%';
+        container.appendChild(bar);
+      }
+    }
+
+    // 初始化
+    window.addEventListener('load', () => {
+      generateCandles();
+      generateEquityCurve();
+    });
+
+    window.addEventListener('resize', () => {
+      const canvas = document.getElementById('chartCanvas');
+      canvas.innerHTML = '';
+      generateCandles();
+    });
+  </script>
+</body>
+
+</html>
