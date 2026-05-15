@@ -45,3 +45,6 @@ reqwest = { version = "0.12", features = ["json"] }
 
 # 时间处理
 chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tempfile = "3"
