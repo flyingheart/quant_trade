@@ -1,37 +1,92 @@
-import { useStore } from '../store';
+import { useState } from 'react';
+
+const TABS = [
+  { key: 'code', label: '策略代码' },
+  { key: 'template', label: '模板库' },
+  { key: 'history', label: '历史版本' },
+];
+
+const CODE_CONTENT = `// @param ma_fast number=5 快线周期
+// @param ma_slow number=20 慢线周期
+// @param rsi_period number=14 RSI周期
+// @param enable_stop_loss bool=true 启用止损
+
+function run() {
+  const maFast = MA(CLOSE, ma_fast);
+  const maSlow = MA(CLOSE, ma_slow);
+  
+  // 金叉买入
+  if (CROSS(maFast, maSlow)) {
+    return BUY;
+  }
+  
+  // 死叉卖出
+  if (CROSS(maSlow, maFast)) {
+    return SELL;
+  }
+  
+  return HOLD;
+}`;
+
+const TEMPLATE_CONTENT = `📚 策略模板库
+
+1. 均线交叉策略
+   - 金叉买入，死叉卖出
+   - 参数: 快线周期, 慢线周期
+
+2. RSI 超买超卖
+   - RSI < 30 买入, RSI > 70 卖出
+   - 参数: RSI周期, 超买线, 超卖线
+
+3. 布林带突破
+   - 突破上轨卖出, 突破下轨买入
+   - 参数: 周期, 标准差倍数
+
+4. MACD 策略
+   - DIF 上穿 DEA 买入
+   - 参数: 快线, 慢线, 信号线
+
+点击模板加载到编辑器`;
+
+const HISTORY_CONTENT = `📜 历史版本
+
+v3 (当前) - 2024-12-15 10:23
+  添加止损逻辑
+
+v2 - 2024-12-14 15:30
+  调整 MA 周期 5/20
+
+v1 - 2024-12-13 09:15
+  初始版本
+
+点击版本可回滚`;
 
 export function RightPanel() {
-  const strategyCode = useStore((s) => s.strategyCode);
-  const setStrategyCode = useStore((s) => s.setStrategyCode);
+  const [activeTab, setActiveTab] = useState('code');
+
+  const content = activeTab === 'code' ? CODE_CONTENT : activeTab === 'template' ? TEMPLATE_CONTENT : HISTORY_CONTENT;
 
   return (
-    <div className="w-80 bg-gradient-to-b from-[#1a1b26] to-[#1f2335] rounded-lg p-3.5 overflow-y-auto border border-[#2a2d3e] transition-all flex-shrink-0">
-      <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-[#2a2d3e]">
-        <span className="text-xs font-semibold text-[#c0caf5]">策略编辑器</span>
-        <span className="text-[10px] text-[#545c7e]">JavaScript</span>
+    <div className="bg-gradient-to-b from-[#1a1b26] to-[#1f2335] rounded-lg border border-[#2a2d3e] flex flex-col overflow-hidden h-full">
+      <div className="flex items-center border-b border-[#2a2d3e] flex-shrink-0">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-3 py-2 text-xs font-medium transition-all ${
+              activeTab === tab.key
+                ? 'text-[#7aa2f7] border-b-2 border-[#7aa2f7] bg-[#24283b]'
+                : 'text-[#9aa4ce] hover:text-[#c0caf5]'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
-
-      <div className="bg-[#0d0e15] rounded-md border border-[#2a2d3e] overflow-hidden">
-        <div className="flex items-center justify-between px-3 py-1.5 bg-[#1a1b26] border-b border-[#2a2d3e]">
-          <span className="text-[10px] text-[#545c7e]">strategy.js</span>
-          <div className="flex gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
-            <span className="text-[10px] text-[#545c7e]">就绪</span>
-          </div>
-        </div>
-        <textarea
-          value={strategyCode}
-          onChange={(e) => setStrategyCode(e.target.value)}
-          className="w-full h-64 bg-[#0d0e15] text-[#c0caf5] p-3 text-xs font-mono outline-none resize-none"
-          spellCheck={false}
-        />
-      </div>
-
-      <div className="mt-3 bg-[#0d0e15] rounded-md border border-[#2a2d3e] p-2.5">
-        <div className="text-[10px] text-[#545c7e] mb-1.5">输出日志</div>
-        <div className="text-[10px] text-[#9aa4ce] font-mono h-20 overflow-y-auto">
-          <div className="text-[#545c7e]">// 运行回测后显示日志</div>
-        </div>
+      <div className="flex-1 overflow-hidden">
+        <pre className="w-full h-full p-3 text-xs text-[#c0caf5] font-mono bg-[#0d0e15] overflow-auto whitespace-pre-wrap">
+          {content}
+        </pre>
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ export function KlineChart() {
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
-  const maSeriesRefs = useRef<Map<number, ISeriesApi<'Line'> | null>>(new Map());
+  const maSeriesRefs = useRef<Map<number, ISeriesApi<'Line'>>>(new Map());
 
   const klines = useStore((s) => s.klines);
   const maLines = useStore((s) => s.maLines);
@@ -77,6 +77,9 @@ export function KlineChart() {
       resizeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
+      candlestickSeriesRef.current = null;
+      volumeSeriesRef.current = null;
+      maSeriesRefs.current.clear();
     };
   }, []);
 
@@ -114,7 +117,7 @@ export function KlineChart() {
     if (!chartRef.current) return;
 
     maSeriesRefs.current.forEach((series) => {
-      if (series) chartRef.current!.removeSeries(series);
+      chartRef.current!.removeSeries(series);
     });
     maSeriesRefs.current.clear();
 

@@ -1,19 +1,25 @@
+import { useState } from 'react';
 import { useStore } from '../store';
 
 export function LeftPanel() {
-  const symbol = useStore((s) => s.symbol);
-  const interval = useStore((s) => s.interval);
   const strategyParams = useStore((s) => s.strategyParams);
   const updateParam = useStore((s) => s.updateParam);
   const runBacktest = useStore((s) => s.runBacktest);
   const resetParams = useStore((s) => s.resetParams);
   const isRunning = useStore((s) => s.isRunning);
   const progress = useStore((s) => s.progress);
+  const [enableStopLoss, setEnableStopLoss] = useState(true);
+  const [enableTakeProfit, setEnableTakeProfit] = useState(false);
+  const [stopLossRatio, setStopLossRatio] = useState(0.05);
+
+  const handleCancel = () => {
+    // 取消回测逻辑
+  };
 
   return (
-    <div className="w-72 bg-gradient-to-b from-[#1a1b26] to-[#1f2335] rounded-lg p-3.5 overflow-y-auto border border-[#2a2d3e] transition-all flex-shrink-0">
+    <div className="bg-gradient-to-b from-[#1a1b26] to-[#1f2335] rounded-lg p-3.5 overflow-y-auto border border-[#2a2d3e] transition-all">
       <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-[#2a2d3e]">
-        <span className="text-xs font-semibold text-[#c0caf5]">参数设置</span>
+        <span className="text-xs font-semibold text-[#c0caf5]">参数配置</span>
         <span className="text-[10px] bg-[#7aa2f7] text-[#1a1b26] px-1.5 py-0.5 rounded-full font-semibold">
           Auto-UI
         </span>
@@ -21,108 +27,196 @@ export function LeftPanel() {
 
       <div className="space-y-2.5">
         <div>
-          <label className="text-[11px] text-[#9aa4ce] mb-1 block">标的代码</label>
-          <input
-            type="text"
-            value={symbol}
-            readOnly
-            className="w-full bg-[#0d0e15] text-[#c0caf5] border border-[#2a2d3e] rounded-md px-2.5 py-1.5 text-xs outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="text-[11px] text-[#9aa4ce] mb-1 block">周期</label>
-          <select
-            value={interval}
-            className="w-full bg-[#0d0e15] text-[#c0caf5] border border-[#2a2d3e] rounded-md px-2.5 py-1.5 text-xs outline-none"
-          >
-            <option value="1d">日线</option>
-            <option value="4h">4小时</option>
-            <option value="1h">1小时</option>
-            <option value="15m">15分钟</option>
-            <option value="5m">5分钟</option>
-            <option value="1m">1分钟</option>
+          <label className="text-[11px] text-[#9aa4ce] mb-1 block">交易标的</label>
+          <select className="w-full bg-[#0d0e15] text-[#c0caf5] border border-[#2a2d3e] rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-[#7aa2f7] transition-colors">
+            <option>贵州茅台 (600519)</option>
+            <option>腾讯控股 (00700)</option>
+            <option>Apple (AAPL)</option>
           </select>
         </div>
 
-        <div className="pt-2 border-t border-[#2a2d3e]">
-          <div className="text-[11px] text-[#9aa4ce] mb-2">策略参数</div>
-          <div className="space-y-2">
-            <div>
-              <div className="flex justify-between text-[10px] text-[#545c7e] mb-1">
-                <span>MA 快线</span>
-                <span>{strategyParams.maFast as number}</span>
-              </div>
-              <input
-                type="range"
-                min={3}
-                max={20}
-                value={strategyParams.maFast as number}
-                onChange={(e) => updateParam('maFast', parseInt(e.target.value))}
-                className="w-full accent-[#7aa2f7]"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-[10px] text-[#545c7e] mb-1">
-                <span>MA 慢线</span>
-                <span>{strategyParams.maSlow as number}</span>
-              </div>
-              <input
-                type="range"
-                min={5}
-                max={60}
-                value={strategyParams.maSlow as number}
-                onChange={(e) => updateParam('maSlow', parseInt(e.target.value))}
-                className="w-full accent-[#7aa2f7]"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-[10px] text-[#545c7e] mb-1">
-                <span>RSI 周期</span>
-                <span>{strategyParams.rsi as number}</span>
-              </div>
-              <input
-                type="range"
-                min={6}
-                max={30}
-                value={strategyParams.rsi as number}
-                onChange={(e) => updateParam('rsi', parseInt(e.target.value))}
-                className="w-full accent-[#7aa2f7]"
-              />
-            </div>
+        <div>
+          <label className="text-[11px] text-[#9aa4ce] mb-1 block">初始资金</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              defaultValue={1000000}
+              className="flex-1 bg-[#0d0e15] text-[#c0caf5] border border-[#2a2d3e] rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-[#7aa2f7] transition-colors"
+            />
+            <span className="text-[10px] text-[#545c7e]">CNY</span>
           </div>
         </div>
 
-        <div className="pt-2 border-t border-[#2a2d3e] space-y-2">
+        <div>
+          <label className="text-[11px] text-[#9aa4ce] mb-1 block">手续费率</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              defaultValue={0.0003}
+              step={0.0001}
+              className="flex-1 bg-[#0d0e15] text-[#c0caf5] border border-[#2a2d3e] rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-[#7aa2f7] transition-colors"
+            />
+            <span className="text-[10px] text-[#545c7e]">单边</span>
+          </div>
+        </div>
+
+        <div className="h-px bg-[#2a2d3e] my-2.5" />
+
+        <div>
+          <div className="flex items-center justify-between text-[11px] text-[#9aa4ce] mb-1">
+            <span>MA 快线周期</span>
+            <span className="text-[10px] text-[#545c7e]">5-50</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min={5}
+              max={50}
+              defaultValue={5}
+              onInput={(e) => updateParam('maFast', parseInt((e.target as HTMLInputElement).value))}
+              className="flex-1 accent-[#7aa2f7]"
+            />
+            <span className="min-w-[28px] text-right text-xs text-[#c0caf5] font-medium">
+              {strategyParams.maFast as number}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between text-[11px] text-[#9aa4ce] mb-1">
+            <span>MA 慢线周期</span>
+            <span className="text-[10px] text-[#545c7e]">10-200</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min={10}
+              max={200}
+              defaultValue={20}
+              onInput={(e) => updateParam('maSlow', parseInt((e.target as HTMLInputElement).value))}
+              className="flex-1 accent-[#7aa2f7]"
+            />
+            <span className="min-w-[28px] text-right text-xs text-[#c0caf5] font-medium">
+              {strategyParams.maSlow as number}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between text-[11px] text-[#9aa4ce] mb-1">
+            <span>RSI 周期</span>
+            <span className="text-[10px] text-[#545c7e]">6-30</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min={6}
+              max={30}
+              defaultValue={14}
+              onInput={(e) => updateParam('rsi', parseInt((e.target as HTMLInputElement).value))}
+              className="flex-1 accent-[#7aa2f7]"
+            />
+            <span className="min-w-[28px] text-right text-xs text-[#c0caf5] font-medium">
+              {strategyParams.rsi as number}
+            </span>
+          </div>
+        </div>
+
+        <div className="h-px bg-[#2a2d3e] my-2.5" />
+
+        <div className="flex items-center justify-between py-1.5">
+          <span className="text-[11px] text-[#9aa4ce]">启用止损</span>
+          <div
+            onClick={() => setEnableStopLoss(!enableStopLoss)}
+            className={`w-9 h-5 rounded-full relative cursor-pointer transition-colors ${
+              enableStopLoss ? 'bg-[#7aa2f7]' : 'bg-[#2a2d3e]'
+            }`}
+          >
+            <div
+              className={`w-4 h-4 bg-[#c0caf5] rounded-full absolute top-0.5 transition-transform ${
+                enableStopLoss ? 'translate-x-4' : 'translate-x-0.5'
+              }`}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between py-1.5">
+          <span className="text-[11px] text-[#9aa4ce]">启用止盈</span>
+          <div
+            onClick={() => setEnableTakeProfit(!enableTakeProfit)}
+            className={`w-9 h-5 rounded-full relative cursor-pointer transition-colors ${
+              enableTakeProfit ? 'bg-[#7aa2f7]' : 'bg-[#2a2d3e]'
+            }`}
+          >
+            <div
+              className={`w-4 h-4 bg-[#c0caf5] rounded-full absolute top-0.5 transition-transform ${
+                enableTakeProfit ? 'translate-x-4' : 'translate-x-0.5'
+              }`}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-[11px] text-[#9aa4ce] mb-1 block">止损比例</label>
+          <input
+            type="number"
+            value={stopLossRatio}
+            onChange={(e) => setStopLossRatio(parseFloat(e.target.value))}
+            step={0.01}
+            className="w-full bg-[#0d0e15] text-[#c0caf5] border border-[#2a2d3e] rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-[#7aa2f7] transition-colors"
+          />
+        </div>
+
+        <div className="h-px bg-[#2a2d3e] my-2.5" />
+
+        <div className="space-y-2">
           <button
             onClick={runBacktest}
             disabled={isRunning}
             className={`w-full py-2 rounded-md text-xs font-semibold transition-all ${
               isRunning
-                ? 'bg-[#545c7e] text-[#9aa4ce] cursor-not-allowed'
-                : 'bg-[#7aa2f7] text-[#1a1b26] hover:bg-[#89b4fa]'
+                ? 'bg-[#545c7e] text-[#9aa4ce] cursor-not-allowed opacity-60'
+                : 'bg-gradient-to-r from-[#7aa2f7] to-[#5d87e5] text-[#1a1b26] hover:translate-y-[-1px] hover:shadow-[0_4px_12px_rgba(122,162,247,0.3)]'
             }`}
           >
-            {isRunning ? `回测中 ${progress}%` : '运行回测'}
+            {isRunning ? '⏳ 回测中...' : '▶ 运行回测'}
           </button>
+
+          {isRunning && (
+            <div className="mt-2.5">
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[11px] text-[#9aa4ce]">回测进行中...</span>
+                <span className="text-[11px] text-[#7aa2f7] font-semibold">{progress}%</span>
+              </div>
+              <div className="h-1 bg-[#2a2d3e] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#7aa2f7] to-[#bb9af7] rounded-full transition-all"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {isRunning && (
+            <button
+              onClick={handleCancel}
+              className="w-full py-1.5 rounded-md text-[11px] font-semibold bg-transparent text-[#f7768e] border border-[#f7768e] hover:bg-[#f7768e] hover:text-[#1a1b26] transition-all"
+            >
+              取消回测
+            </button>
+          )}
+
           <button
             onClick={resetParams}
-            className="w-full py-2 rounded-md text-xs font-semibold bg-[#24283b] text-[#9aa4ce] border border-[#363b54] hover:bg-[#363b54] hover:text-[#c0caf5] transition-all"
+            className="w-full py-2 rounded-md text-xs font-semibold bg-[#24283b] text-[#c0caf5] border border-[#363b54] hover:bg-[#363b54] transition-all"
           >
-            重置参数
+            ↺ 重置参数
+          </button>
+
+          <button className="w-full py-2 rounded-md text-xs font-semibold bg-[#24283b] text-[#c0caf5] border border-[#363b54] hover:bg-[#363b54] transition-all">
+            💾 保存配置
           </button>
         </div>
-
-        {isRunning && (
-          <div className="w-full bg-[#0d0e15] rounded-full h-1.5 mt-2">
-            <div
-              className="bg-[#7aa2f7] h-1.5 rounded-full transition-all"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

@@ -12,9 +12,9 @@
   "app": {
     "windows": [
       {
-        "title": "Tauri",
-        "width": 800,
-        "height": 600,
+        "title": "交易策略助手",
+        "width": 1400,
+        "height": 900,
         "resizable": true,
         "fullscreen": false
       }
