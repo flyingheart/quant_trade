@@ -107,16 +107,16 @@ impl CacheManager {
       .query_map(params![symbol, interval.as_str()], |row| {
         let ts: String = row.get(0)?;
         let dt = ts.parse::<chrono::DateTime<chrono::Utc>>().unwrap_or_default();
-        Ok(KlineBar {
-          timestamp: dt,
-          open: row.get(1)?,
-          high: row.get(2)?,
-          low: row.get(3)?,
-          close: row.get(4)?,
-          volume: row.get(5)?,
-          symbol: symbol.to_string(),
+        Ok(KlineBar::new(
+          dt,
+          row.get(1)?,
+          row.get(2)?,
+          row.get(3)?,
+          row.get(4)?,
+          row.get(5)?,
+          symbol.to_string(),
           interval,
-        })
+        ))
       })?
       .collect::<Result<Vec<_>, _>>()?;
 
@@ -144,16 +144,16 @@ impl CacheManager {
         |row| {
           let ts: String = row.get(0)?;
           let dt = ts.parse::<chrono::DateTime<chrono::Utc>>().unwrap_or_default();
-          Ok(KlineBar {
-            timestamp: dt,
-            open: row.get(1)?,
-            high: row.get(2)?,
-            low: row.get(3)?,
-            close: row.get(4)?,
-            volume: row.get(5)?,
-            symbol: symbol.to_string(),
+          Ok(KlineBar::new(
+            dt,
+            row.get(1)?,
+            row.get(2)?,
+            row.get(3)?,
+            row.get(4)?,
+            row.get(5)?,
+            symbol.to_string(),
             interval,
-          })
+          ))
         },
       )?
       .collect::<Result<Vec<_>, _>>()?;

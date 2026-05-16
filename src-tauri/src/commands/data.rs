@@ -34,7 +34,9 @@ pub async fn load_local_data(
 pub async fn load_api_data(
   config: DataConfig,
 ) -> Result<Vec<KlineBar>, AppError> {
+  log::info!("[load_api_data] Called with symbol={}, interval={:?}", config.symbol, config.interval);
   let klines = DataLoader::load_from_api(&config).await?;
+  log::info!("[load_api_data] Returning {} klines", klines.len());
   Ok(klines)
 }
 

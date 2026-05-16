@@ -4,6 +4,7 @@ mod errors;
 
 use std::path::PathBuf;
 use std::sync::Mutex;
+use tauri::Manager;
 
 use commands::data::{load_local_data, load_api_data, save_to_cache, query_from_cache, sync_incremental, clear_cache, AppState};
 use data::CacheManager;
@@ -25,6 +26,12 @@ pub fn run() {
             .build(),
         )?;
       }
+      
+      // 确保窗口显示在最前面
+      let window = app.get_webview_window("main").unwrap();
+      window.show()?;
+      window.set_focus()?;
+      
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![

@@ -6,8 +6,7 @@ export function TopBar() {
   const rightPanelCollapsed = useStore((s) => s.rightPanelCollapsed);
   const toggleLeftPanel = useStore((s) => s.toggleLeftPanel);
   const toggleRightPanel = useStore((s) => s.toggleRightPanel);
-  const isRunning = useStore((s) => s.isRunning);
-  const [status, setStatus] = useState<'ready' | 'running' | 'error'>('ready');
+  const [status] = useState<'ready' | 'running' | 'error'>('ready');
 
   return (
     <div className="h-11 bg-gradient-to-r from-[#1a1b26] to-[#1f2335] rounded-lg flex items-center px-4 justify-between border border-[#2a2d3e] flex-shrink-0">

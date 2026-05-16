@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useStore } from '../store';
 import { TopBar } from './TopBar';
 import { LeftPanel } from './LeftPanel';
@@ -9,6 +10,11 @@ import { ChartToolbar } from './ChartToolbar';
 export function Layout() {
   const leftPanelCollapsed = useStore((s) => s.leftPanelCollapsed);
   const rightPanelCollapsed = useStore((s) => s.rightPanelCollapsed);
+  const loadDefaultData = useStore((s) => s.loadDefaultData);
+
+  useEffect(() => {
+    loadDefaultData();
+  }, [loadDefaultData]);
 
   return (
     <div className="w-full h-full flex flex-col gap-2 p-3 bg-[#0d0e15]">
@@ -27,7 +33,7 @@ export function Layout() {
         <div className="flex-1 flex flex-col min-h-0" style={{ minWidth: 400 }}>
           <div className="flex-1 min-h-0 bg-[#1a1b26] rounded-lg border border-[#2a2d3e] overflow-hidden flex flex-col">
             <ChartToolbar />
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 relative">
               <KlineChart />
             </div>
           </div>

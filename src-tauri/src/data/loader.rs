@@ -32,7 +32,8 @@ impl DataLoader {
   /// 从 API 拉取数据
   pub async fn load_from_api(config: &DataConfig) -> Result<Vec<KlineBar>> {
     match &config.source {
-      super::types::DataSource::RestApi { url, .. } if url.contains("tencent") => {
+      // 腾讯财经API域名: web.ifzq.gtimg.cn
+      super::types::DataSource::RestApi { url, .. } if url.contains("gtimg.cn") || url.contains("tencent") => {
         Self::fetch_tencent_finance(config).await
       }
       super::types::DataSource::RestApi { url, .. } if url.contains("tdx") => {
@@ -111,24 +112,25 @@ impl DataLoader {
     for i in 0..len {
       let dt = chrono::DateTime::from_timestamp_millis(timestamps[i]).unwrap_or_default();
 
-      klines.push(KlineBar {
-        timestamp: dt,
-        open: get_f64(open_col, i),
-        high: get_f64(high_col, i),
-        low: get_f64(low_col, i),
-        close: get_f64(close_col, i),
-        volume: get_f64(volume_col, i),
-        symbol: symbol.to_string(),
+      klines.push(KlineBar::new(
+        dt,
+        get_f64(open_col, i),
+        get_f64(high_col, i),
+        get_f64(low_col, i),
+        get_f64(close_col, i),
+        get_f64(volume_col, i),
+        symbol.to_string(),
         interval,
-      });
+      ));
     }
 
     Ok(klines)
   }
 
-  /// 腾讯财经 API 数据拉取（港股/美股）
+  /// 腾讯财经 API 数据拉取（A股/港股/美股）
   async fn fetch_tencent_finance(config: &DataConfig) -> Result<Vec<KlineBar>> {
     let client = reqwest::Client::new();
+    // 腾讯API周期参数: 5/15/30 表示分钟线, day 表示日线
     let interval_map = match config.interval {
       Interval::Min5 => "5",
       Interval::Min15 => "15",
@@ -136,32 +138,35 @@ impl DataLoader {
       Interval::Day1 => "day",
     };
 
+    // 正确参数格式: sh000001,day,,,数量,qfq
+    // 腾讯API最大支持约1000条日线数据（约4年）
     let url = format!(
-      "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={},{},,,320,qfq",
+      "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={},{},,,1000,qfq",
       config.symbol, interval_map
     );
 
-    let resp = client.get(&url).send().await?.json::<serde_json::Value>().await?;
-    Self::parse_tencent_klines(&resp, &config.symbol, config.interval)
+    log::info!("Fetching Tencent finance data from: {}", url);
+    let resp = client.get(&url).send().await?.text().await?;
+    
+    let json: serde_json::Value = serde_json::from_str(&resp)?;
+    Self::parse_tencent_klines(&json, &config.symbol, config.interval)
   }
 
-  /// 通达信 K 线数据拉取（A股）
+  /// 通达信 K 线数据拉取（A股）- 使用腾讯财经 API 作为替代
   async fn fetch_tdx_kline(config: &DataConfig) -> Result<Vec<KlineBar>> {
-    let client = reqwest::Client::new();
-    let interval_map = match config.interval {
-      Interval::Min5 => "5",
-      Interval::Min15 => "15",
-      Interval::Min30 => "30",
-      Interval::Day1 => "day",
-    };
+    // A股也使用腾讯财经API获取数据
+    Self::fetch_tencent_finance(config).await
+  }
 
-    let url = format!(
-      "https://tdx.example.com/api/kline?symbol={}&interval={}&limit=1000",
-      config.symbol, interval_map
-    );
-
-    let resp = client.get(&url).send().await?.json::<Vec<serde_json::Value>>().await?;
-    Self::parse_tdx_klines(&resp, &config.symbol, config.interval)
+  /// 辅助函数：从 JSON 值中解析浮点数（支持字符串和数字格式）
+  fn parse_f64(val: &serde_json::Value) -> f64 {
+    if let Some(v) = val.as_f64() {
+      v
+    } else if let Some(s) = val.as_str() {
+      s.parse().unwrap_or(0.0)
+    } else {
+      0.0
+    }
   }
 
   /// 解析腾讯财经 K 线数据
@@ -173,29 +178,61 @@ impl DataLoader {
     let mut klines = Vec::new();
 
     if let Some(data) = resp.get("data") {
-      if let Some(kline_data) = data.get("kline") {
-        if let Some(items) = kline_data.get("items").and_then(|v| v.as_array()) {
-          for item in items {
+      // 格式1: data.{symbol}.day (实际腾讯API返回格式)
+      if let Some(symbol_data) = data.get(symbol) {
+        if let Some(day_data) = symbol_data.get("day").and_then(|v| v.as_array()) {
+          for item in day_data {
             if let Some(arr) = item.as_array() {
               if arr.len() >= 6 {
                 let timestamp = arr[0].as_str().unwrap_or("");
-                let open: f64 = arr[1].as_f64().unwrap_or(0.0);
-                let close: f64 = arr[2].as_f64().unwrap_or(0.0);
-                let high: f64 = arr[3].as_f64().unwrap_or(0.0);
-                let low: f64 = arr[4].as_f64().unwrap_or(0.0);
-                let volume: f64 = arr[5].as_f64().unwrap_or(0.0);
+                let open = Self::parse_f64(&arr[1]);
+                let close = Self::parse_f64(&arr[2]);
+                let high = Self::parse_f64(&arr[3]);
+                let low = Self::parse_f64(&arr[4]);
+                let volume = Self::parse_f64(&arr[5]);
 
-                if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(timestamp, "%Y-%m-%d %H:%M:%S") {
-                  klines.push(KlineBar {
-                    timestamp: chrono::DateTime::from_naive_utc_and_offset(dt, chrono::Utc),
+                // 日线格式: "2024-01-15"
+                if let Ok(dt) = chrono::NaiveDate::parse_from_str(timestamp, "%Y-%m-%d") {
+                  klines.push(KlineBar::new(
+                    chrono::DateTime::from_naive_utc_and_offset(dt.and_hms_opt(0, 0, 0).unwrap(), chrono::Utc),
                     open,
                     high,
                     low,
                     close,
                     volume,
-                    symbol: symbol.to_string(),
+                    symbol.to_string(),
                     interval,
-                  });
+                  ));
+                }
+              }
+            }
+          }
+        }
+      }
+      // 格式2: data.kline.items (旧格式)
+      else if let Some(kline_data) = data.get("kline") {
+        if let Some(items) = kline_data.get("items").and_then(|v| v.as_array()) {
+          for item in items {
+            if let Some(arr) = item.as_array() {
+              if arr.len() >= 6 {
+                let timestamp = arr[0].as_str().unwrap_or("");
+                let open = Self::parse_f64(&arr[1]);
+                let close = Self::parse_f64(&arr[2]);
+                let high = Self::parse_f64(&arr[3]);
+                let low = Self::parse_f64(&arr[4]);
+                let volume = Self::parse_f64(&arr[5]);
+
+                if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(timestamp, "%Y-%m-%d %H:%M:%S") {
+                  klines.push(KlineBar::new(
+                    chrono::DateTime::from_naive_utc_and_offset(dt, chrono::Utc),
+                    open,
+                    high,
+                    low,
+                    close,
+                    volume,
+                    symbol.to_string(),
+                    interval,
+                  ));
                 }
               }
             }
@@ -225,16 +262,16 @@ impl DataLoader {
         k.get("volume").and_then(|v| v.as_f64()),
       ) {
         if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(timestamp) {
-          klines.push(KlineBar {
-            timestamp: dt.with_timezone(&chrono::Utc),
+          klines.push(KlineBar::new(
+            dt.with_timezone(&chrono::Utc),
             open,
             high,
             low,
             close,
             volume,
-            symbol: symbol.to_string(),
+            symbol.to_string(),
             interval,
-          });
+          ));
         }
       }
     }

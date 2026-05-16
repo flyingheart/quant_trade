@@ -10,13 +10,16 @@
     "beforeBuildCommand": "npm run build --prefix /Volumes/SN7100/Code/Rust/quant_trade/frontend"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "交易策略助手",
         "width": 1400,
         "height": 900,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "visible": true,
+        "focus": true
       }
     ],
     "security": {

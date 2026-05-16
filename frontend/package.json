@@ -10,16 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.6",
+    "@tauri-apps/api": "^2",
+    "clsx": "^2.1",
+    "lightweight-charts": "^3.1.5",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "@tauri-apps/api": "^2",
-    "zustand": "^5.0",
-    "lightweight-charts": "^4.2",
-    "@monaco-editor/react": "^4.6",
-    "clsx": "^2.1"
+    "zustand": "^5.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.1",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -28,10 +29,10 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "tailwindcss": "^4.1",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^6.0",
-    "tailwindcss": "^4.1",
-    "@tailwindcss/vite": "^4.1"
+    "vite-plugin-tauri": "^4.0.0"
   }
 }

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { createChart, ColorType, CrosshairMode } from 'lightweight-charts';
-import type { IChartApi, ISeriesApi, CandlestickData, HistogramData, LineData } from 'lightweight-charts';
+import { useEffect, useRef, useState } from 'react';
+import { createChart, CrosshairMode } from 'lightweight-charts';
+import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { useStore } from '../store';
 import type { KlineBar, MaLine } from '../types';
 
@@ -8,90 +8,78 @@ export function KlineChart() {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
-  const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
   const maSeriesRefs = useRef<Map<number, ISeriesApi<'Line'>>>(new Map());
+  const initRef = useRef(false);
+  const [chartReady, setChartReady] = useState(false);
 
   const klines = useStore((s) => s.klines);
   const maLines = useStore((s) => s.maLines);
 
-  const initChart = useCallback(() => {
-    if (!chartContainerRef.current || chartRef.current) return;
+  useEffect(() => {
+    if (initRef.current) return;
+    const container = chartContainerRef.current;
+    if (!container) return;
 
-    const chart = createChart(chartContainerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: '#0d0e15' },
-        textColor: '#a9b1d6',
-      },
-      grid: {
-        vertLines: { color: '#1a1b26' },
-        horzLines: { color: '#1a1b26' },
-      },
-      crosshair: { mode: CrosshairMode.Normal },
-      rightPriceScale: {
-        borderColor: '#2a2d3e',
-        scaleMargins: { top: 0.1, bottom: 0.2 },
-      },
-      timeScale: {
-        borderColor: '#2a2d3e',
-        timeVisible: false,
-      },
-      handleScroll: true,
-      handleScale: true,
-    });
+    const raf = requestAnimationFrame(() => {
+      const rect = container.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
 
-    const candlestickSeries = chart.addCandlestickSeries({
-      upColor: '#22c55e',
-      downColor: '#ef4444',
-      borderUpColor: '#22c55e',
-      borderDownColor: '#ef4444',
-      wickUpColor: '#22c55e',
-      wickDownColor: '#ef4444',
-    });
+      initRef.current = true;
 
-    const volumeSeries = chart.addHistogramSeries({
-      color: '#3b82f6',
-      priceFormat: { type: 'volume' },
-      priceScaleId: 'volume',
-    });
+      const chart = createChart(container, {
+        width: rect.width,
+        height: rect.height,
+        layout: {
+          backgroundColor: '#0d0e15',
+          textColor: '#a9b1d6',
+        },
+        grid: {
+          vertLines: { color: '#1a1b26' },
+          horzLines: { color: '#1a1b26' },
+        },
+        crosshair: { mode: CrosshairMode.Normal },
+        rightPriceScale: {
+          borderColor: '#2a2d3e',
+          scaleMargins: { top: 0.1, bottom: 0.2 },
+        },
+        timeScale: {
+          borderColor: '#2a2d3e',
+          timeVisible: true,
+        },
+        handleScroll: true,
+        handleScale: true,
+      });
 
-    chart.priceScale('volume').applyOptions({
-      scaleMargins: { top: 0.8, bottom: 0 },
-    });
+      chartRef.current = chart;
 
-    chartRef.current = chart;
-    candlestickSeriesRef.current = candlestickSeries;
-    volumeSeriesRef.current = volumeSeries;
+      const observer = new ResizeObserver(() => {
+        chart.resize(container.clientWidth, container.clientHeight);
+      });
+      observer.observe(container);
 
-    const resizeObserver = new ResizeObserver(() => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-          height: chartContainerRef.current.clientHeight,
+      setTimeout(() => {
+        const candlestickSeries = chart.addCandlestickSeries({
+          upColor: '#22c55e',
+          downColor: '#ef4444',
+          borderUpColor: '#22c55e',
+          borderDownColor: '#ef4444',
+          wickUpColor: '#22c55e',
+          wickDownColor: '#ef4444',
         });
-      }
+        candlestickSeriesRef.current = candlestickSeries;
+        setChartReady(true);
+      }, 100);
     });
 
-    resizeObserver.observe(chartContainerRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-      chart.remove();
-      chartRef.current = null;
-      candlestickSeriesRef.current = null;
-      volumeSeriesRef.current = null;
-      maSeriesRefs.current.clear();
-    };
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   useEffect(() => {
-    const cleanup = initChart();
-    return cleanup;
-  }, [initChart]);
+    if (!chartReady) return;
+    if (!candlestickSeriesRef.current) return;
+    if (klines.length === 0) return;
 
-  useEffect(() => {
-    if (!candlestickSeriesRef.current || !volumeSeriesRef.current) return;
-
-    const candleData: CandlestickData[] = klines.map((k: KlineBar) => ({
+    const candleData = klines.map((k: KlineBar) => ({
       time: k.time,
       open: k.open,
       high: k.high,
@@ -99,22 +87,13 @@ export function KlineChart() {
       close: k.close,
     }));
 
-    const volumeData: HistogramData[] = klines.map((k: KlineBar) => ({
-      time: k.time,
-      value: k.volume,
-      color: k.close >= k.open ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)',
-    }));
-
     candlestickSeriesRef.current.setData(candleData);
-    volumeSeriesRef.current.setData(volumeData);
-
-    if (candleData.length > 0) {
-      chartRef.current?.timeScale().fitContent();
-    }
-  }, [klines]);
+    chartRef.current?.timeScale().fitContent();
+  }, [klines, chartReady]);
 
   useEffect(() => {
-    if (!chartRef.current) return;
+    if (!chartReady || !chartRef.current) return;
+    if (maLines.length === 0) return;
 
     maSeriesRefs.current.forEach((series) => {
       chartRef.current!.removeSeries(series);
@@ -130,7 +109,7 @@ export function KlineChart() {
         crosshairMarkerVisible: false,
       });
 
-      const lineData: LineData[] = ma.data.map((d) => ({
+      const lineData = ma.data.map((d) => ({
         time: d.time,
         value: d.value,
       }));
@@ -138,7 +117,18 @@ export function KlineChart() {
       lineSeries.setData(lineData);
       maSeriesRefs.current.set(ma.period, lineSeries);
     });
-  }, [maLines]);
+  }, [maLines, chartReady]);
 
-  return <div ref={chartContainerRef} className="w-full h-full" />;
+  return (
+    <div
+      ref={chartContainerRef}
+      style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+      }}
+    />
+  );
 }

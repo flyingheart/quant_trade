@@ -43,7 +43,10 @@ pub enum DataSource {
 /// K线数据结构
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct KlineBar {
+  #[serde(skip_serializing)]
   pub timestamp: chrono::DateTime<chrono::Utc>,
+  /// 前端友好的时间字符串
+  pub time: String,
   pub open: f64,
   pub high: f64,
   pub low: f64,
@@ -51,6 +54,38 @@ pub struct KlineBar {
   pub volume: f64,
   pub symbol: String,
   pub interval: Interval,
+}
+
+impl KlineBar {
+  /// 创建新的 KlineBar
+  pub fn new(
+    timestamp: chrono::DateTime<chrono::Utc>,
+    open: f64,
+    high: f64,
+    low: f64,
+    close: f64,
+    volume: f64,
+    symbol: String,
+    interval: Interval,
+  ) -> Self {
+    // 将 UTC 时间转换为日期字符串（日线用日期，分钟线用完整时间）
+    let time = match interval {
+      Interval::Day1 => timestamp.format("%Y-%m-%d").to_string(),
+      _ => timestamp.format("%Y-%m-%d %H:%M:%S").to_string(),
+    };
+
+    Self {
+      timestamp,
+      time,
+      open,
+      high,
+      low,
+      close,
+      volume,
+      symbol,
+      interval,
+    }
+  }
 }
 
 /// 数据元信息（用于增量更新）

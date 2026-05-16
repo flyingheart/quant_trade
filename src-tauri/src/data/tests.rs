@@ -5,6 +5,10 @@ mod tests {
   use std::io::Write;
   use tempfile::NamedTempFile;
 
+  fn make_bar(timestamp: chrono::DateTime<chrono::Utc>, open: f64, high: f64, low: f64, close: f64, volume: f64) -> KlineBar {
+    KlineBar::new(timestamp, open, high, low, close, volume, "TEST".to_string(), Interval::Day1)
+  }
+
   #[test]
   fn test_interval_as_str() {
     assert_eq!(Interval::Min5.as_str(), "5min");
@@ -23,26 +27,8 @@ mod tests {
   fn test_clean_data_removes_duplicates() {
     let base_time = chrono::Utc::now();
     let mut data = vec![
-      KlineBar {
-        timestamp: base_time,
-        open: 100.0,
-        high: 110.0,
-        low: 90.0,
-        close: 105.0,
-        volume: 1000.0,
-        symbol: "TEST".to_string(),
-        interval: Interval::Day1,
-      },
-      KlineBar {
-        timestamp: base_time,
-        open: 100.0,
-        high: 110.0,
-        low: 90.0,
-        close: 105.0,
-        volume: 1000.0,
-        symbol: "TEST".to_string(),
-        interval: Interval::Day1,
-      },
+      make_bar(base_time, 100.0, 110.0, 90.0, 105.0, 1000.0),
+      make_bar(base_time, 100.0, 110.0, 90.0, 105.0, 1000.0),
     ];
 
     DataLoader::clean(&mut data);
@@ -53,26 +39,8 @@ mod tests {
   fn test_clean_data_removes_invalid_bars() {
     let base_time = chrono::Utc::now();
     let mut data = vec![
-      KlineBar {
-        timestamp: base_time,
-        open: 0.0,
-        high: 0.0,
-        low: 0.0,
-        close: 0.0,
-        volume: 1000.0,
-        symbol: "TEST".to_string(),
-        interval: Interval::Day1,
-      },
-      KlineBar {
-        timestamp: base_time + chrono::Duration::days(1),
-        open: 100.0,
-        high: 110.0,
-        low: 90.0,
-        close: 105.0,
-        volume: 1000.0,
-        symbol: "TEST".to_string(),
-        interval: Interval::Day1,
-      },
+      make_bar(base_time, 0.0, 0.0, 0.0, 0.0, 1000.0),
+      make_bar(base_time + chrono::Duration::days(1), 100.0, 110.0, 90.0, 105.0, 1000.0),
     ];
 
     DataLoader::clean(&mut data);
@@ -84,26 +52,8 @@ mod tests {
   fn test_clean_data_sorts_by_timestamp() {
     let base_time = chrono::Utc::now();
     let mut data = vec![
-      KlineBar {
-        timestamp: base_time + chrono::Duration::days(2),
-        open: 102.0,
-        high: 112.0,
-        low: 92.0,
-        close: 107.0,
-        volume: 1000.0,
-        symbol: "TEST".to_string(),
-        interval: Interval::Day1,
-      },
-      KlineBar {
-        timestamp: base_time,
-        open: 100.0,
-        high: 110.0,
-        low: 90.0,
-        close: 105.0,
-        volume: 1000.0,
-        symbol: "TEST".to_string(),
-        interval: Interval::Day1,
-      },
+      make_bar(base_time + chrono::Duration::days(2), 102.0, 112.0, 92.0, 107.0, 1000.0),
+      make_bar(base_time, 100.0, 110.0, 90.0, 105.0, 1000.0),
     ];
 
     DataLoader::clean(&mut data);

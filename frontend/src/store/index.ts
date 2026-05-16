@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { AppState, KlineBar, MaLine } from '../types';
-import { generateMockKlines, generateMaLines } from '../utils/mockData';
+import { generateMaLines } from '../utils/mockData';
+import { loadApiData, saveToCache } from '../api/data';
+import { generateMockKlines } from '../api/tencent';
 
 interface Store extends AppState {
   setKlines: (klines: KlineBar[]) => void;
@@ -12,16 +14,14 @@ interface Store extends AppState {
   setActiveTab: (tab: AppState['activeTab']) => void;
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
+  loadDefaultData: () => Promise<void>;
 }
 
-const mockKlines = generateMockKlines(1000);
-const mockMaLines = generateMaLines(mockKlines);
-
 export const useStore = create<Store>((set) => ({
-  klines: mockKlines,
-  maLines: mockMaLines,
-  symbol: 'AAPL',
-  interval: '1d',
+  klines: [],
+  maLines: [],
+  symbol: 'sh000001',
+  interval: 'day',
   strategyCode: '// 编写你的策略\nfunction run() {\n  return HOLD;\n}',
   strategyParams: { maFast: 5, maSlow: 10, rsi: 14 },
   isRunning: false,
@@ -39,10 +39,36 @@ export const useStore = create<Store>((set) => ({
     strategyParams: { ...state.strategyParams, [key]: value },
   })),
 
+  loadDefaultData: async () => {
+    try {
+      const klines = await loadApiData({
+        symbol: 'sh000001',
+        interval: 'Day1',
+        source: {
+          RestApi: {
+            url: 'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get',
+            api_key: null,
+          },
+        },
+      });
+      const maLines = generateMaLines(klines);
+      set({ klines, maLines, symbol: 'sh000001', interval: 'day' });
+      
+      try {
+        await saveToCache(klines);
+      } catch {
+        // 缓存失败不影响展示
+      }
+    } catch {
+      const mockKlines = generateMockKlines(1000);
+      const mockMaLines = generateMaLines(mockKlines);
+      set({ klines: mockKlines, maLines: mockMaLines });
+    }
+  },
+
   runBacktest: async () => {
     set({ isRunning: true, progress: 0, error: null });
     try {
-      // 模拟回测进度
       await new Promise<void>((resolve) => {
         let current = 0;
         const interval = setInterval(() => {

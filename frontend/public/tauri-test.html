@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tauri Test</title>
+</head>
+<body>
+  <h1>Tauri API Test</h1>
+  <div id="result"></div>
+  <script>
+    const result = document.getElementById('result');
+    result.innerHTML = `
+      <p>window.__TAURI__: ${JSON.stringify(window.__TAURI__, null, 2)}</p>
+      <p>window.__TAURI_INTERNALS__: ${JSON.stringify(window.__TAURI_INTERNALS__, null, 2)}</p>
+      <p>window.isTauri: ${window.isTauri}</p>
+    `;
+  </script>
+</body>
+</html>
