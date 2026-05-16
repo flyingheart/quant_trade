@@ -178,9 +178,12 @@ impl DataLoader {
     let mut klines = Vec::new();
 
     if let Some(data) = resp.get("data") {
-      // 格式1: data.{symbol}.day (实际腾讯API返回格式)
+      // 格式1: data.{symbol}.day (指数) 或 data.{symbol}.qfqday (个股前复权)
       if let Some(symbol_data) = data.get(symbol) {
-        if let Some(day_data) = symbol_data.get("day").and_then(|v| v.as_array()) {
+        if let Some(day_data) = symbol_data.get("qfqday")
+          .or_else(|| symbol_data.get("day"))
+          .and_then(|v| v.as_array())
+        {
           for item in day_data {
             if let Some(arr) = item.as_array() {
               if arr.len() >= 6 {

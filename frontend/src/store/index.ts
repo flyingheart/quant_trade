@@ -15,7 +15,19 @@ interface Store extends AppState {
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
   loadDefaultData: () => Promise<void>;
+  loadSymbolData: (symbol: string) => Promise<void>;
+  history: { code: string; name: string }[];
+  addHistory: (item: { code: string; name: string }) => void;
 }
+
+// 从 localStorage 恢复历史记录
+const savedHistory = (() => {
+  try {
+    return JSON.parse(localStorage.getItem('stock_history') || '[]');
+  } catch {
+    return [];
+  }
+})();
 
 export const useStore = create<Store>((set) => ({
   klines: [],
@@ -31,6 +43,7 @@ export const useStore = create<Store>((set) => ({
   activeTab: 'overview',
   leftPanelCollapsed: false,
   rightPanelCollapsed: false,
+  history: savedHistory,
 
   setKlines: (klines) => set({ klines }),
   setMaLines: (maLines) => set({ maLines }),
@@ -64,6 +77,36 @@ export const useStore = create<Store>((set) => ({
       const mockMaLines = generateMaLines(mockKlines);
       set({ klines: mockKlines, maLines: mockMaLines });
     }
+  },
+
+  loadSymbolData: async (symbol: string) => {
+    try {
+      const klines = await loadApiData({
+        symbol,
+        interval: 'Day1',
+        source: {
+          RestApi: {
+            url: 'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get',
+            api_key: null,
+          },
+        },
+      });
+      const maLines = generateMaLines(klines);
+      set({ klines, maLines, symbol, interval: 'day' });
+    } catch {
+      // 加载失败时不修改数据
+    }
+  },
+
+  addHistory: (item) => {
+    set((state) => {
+      const filtered = state.history.filter((h) => h.code !== item.code);
+      const next = [item, ...filtered].slice(0, 50);
+      try {
+        localStorage.setItem('stock_history', JSON.stringify(next));
+      } catch { /* ignore */ }
+      return { history: next };
+    });
   },
 
   runBacktest: async () => {

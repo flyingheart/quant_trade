@@ -31,13 +31,15 @@ async function loadApiDataViaFetch(config: { symbol: string; interval: string })
     Day1: 'day',
   };
   const interval = intervalMap[config.interval] || 'day';
-  const url = `https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=${config.symbol},${interval},,,320,qfq`;
+  const url = `https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=${config.symbol},${interval},,,1000,qfq`;
   
   const resp = await fetch(url);
   const json = await resp.json();
   
   const klines: import('../types').KlineBar[] = [];
-  const dayData = json?.data?.[config.symbol]?.day;
+  // 个股使用 qfqday（前复权），指数使用 day
+  const rawData = json?.data?.[config.symbol];
+  const dayData = rawData?.qfqday || rawData?.day;
   if (Array.isArray(dayData)) {
     for (const item of dayData) {
       if (Array.isArray(item) && item.length >= 6) {
