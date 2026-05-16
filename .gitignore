@@ -1,0 +1,11 @@
+
+.claude/*
+*.db
+*.db-wal
+*.db-shm
+*.db.wal
+*.db.shm
+node_modules
+dist
+dist-ssr
+target/

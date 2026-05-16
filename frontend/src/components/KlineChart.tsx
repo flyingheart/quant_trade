@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createChart, CrosshairMode } from 'lightweight-charts';
-import type { IChartApi, ISeriesApi } from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { useStore } from '../store';
 import type { KlineBar, MaLine } from '../types';
 
@@ -21,6 +21,7 @@ export function KlineChart() {
   const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const maSeriesRefs = useRef<Map<number, ISeriesApi<'Line'>>>(new Map());
   const klineMapRef = useRef<Map<string, KlineBar>>(new Map());
+  const timeIndexRef = useRef<Map<string, number>>(new Map());
   const initRef = useRef(false);
   const [chartReady, setChartReady] = useState(false);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
@@ -35,18 +36,20 @@ export function KlineChart() {
         return;
       }
 
-      let timeKey: string;
-      if (typeof param.time === 'string') {
-        timeKey = param.time;
-      } else if (typeof param.time === 'object' && 'year' in param.time) {
-        const t = param.time as { year: number; month: number; day: number };
-        timeKey = `${t.year}-${String(t.month).padStart(2, '0')}-${String(t.day).padStart(2, '0')}`;
-      } else {
+      let index: number | undefined;
+      if (typeof param.time === 'number') {
+        index = param.time;
+      } else if (typeof param.time === 'string') {
+        // 通过原始时间查索引
+        index = timeIndexRef.current.get(param.time);
+      }
+
+      if (index === undefined) {
         setTooltip(null);
         return;
       }
 
-      const k = klineMapRef.current.get(timeKey);
+      const k = klineMapRef.current.get(String(index));
       if (!k) {
         setTooltip(null);
         return;
@@ -88,14 +91,24 @@ export function KlineChart() {
           vertLines: { color: '#1a1b26' },
           horzLines: { color: '#1a1b26' },
         },
-        crosshair: { mode: CrosshairMode.Normal },
+        crosshair: {
+          mode: CrosshairMode.Normal,
+          horzLine: { visible: false, labelVisible: false },
+          vertLine: { visible: true, labelVisible: true },
+        },
         rightPriceScale: {
           borderColor: '#2a2d3e',
           scaleMargins: { top: 0.1, bottom: 0.2 },
         },
         timeScale: {
           borderColor: '#2a2d3e',
-          timeVisible: true,
+          timeVisible: false,
+          secondsVisible: false,
+          tickMarkFormatter: (time: unknown) => {
+            const bar = klineMapRef.current.get(String(Math.round(time as number)));
+            if (!bar) return '';
+            return bar.time.includes(' ') ? bar.time.slice(5, 16) : bar.time.slice(5);
+          },
         },
         handleScroll: true,
         handleScale: true,
@@ -118,6 +131,7 @@ export function KlineChart() {
           borderDownColor: '#22c55e',
           wickUpColor: '#ef4444',
           wickDownColor: '#22c55e',
+          priceLineVisible: false,
         });
         candlestickSeriesRef.current = candlestickSeries;
         setChartReady(true);
@@ -133,20 +147,24 @@ export function KlineChart() {
     if (klines.length === 0) return;
 
     const klineMap = new Map<string, KlineBar>();
-    const candleData = klines.map((k: KlineBar) => {
-      klineMap.set(k.time, k);
-      return {
-        time: k.time,
-        open: k.open,
-        high: k.high,
-        low: k.low,
-        close: k.close,
-      };
+    const timeIndex = new Map<string, number>();
+    const sorted = [...klines].sort((a, b) => a.time.localeCompare(b.time));
+
+    const candleData = sorted.map((k, i) => {
+      const time = i as UTCTimestamp;
+      klineMap.set(String(time), k);
+      timeIndex.set(k.time, i);
+      return { time, open: k.open, high: k.high, low: k.low, close: k.close };
     });
+
     klineMapRef.current = klineMap;
+    timeIndexRef.current = timeIndex;
 
     candlestickSeriesRef.current.setData(candleData);
     chartRef.current?.timeScale().fitContent();
+    // 设置合理的初始柱宽度（数据越多适当放大间距）
+    const idealSpacing = Math.max(2, Math.min(8, 800 / candleData.length));
+    chartRef.current?.timeScale().applyOptions({ barSpacing: idealSpacing });
   }, [klines, chartReady]);
 
   useEffect(() => {
@@ -167,10 +185,13 @@ export function KlineChart() {
         crosshairMarkerVisible: false,
       });
 
-      const lineData = ma.data.map((d) => ({
-        time: d.time,
-        value: d.value,
-      }));
+      const lineData = ma.data
+        .map((d) => {
+          const idx = timeIndexRef.current.get(d.time);
+          return idx !== undefined ? { time: idx as UTCTimestamp, value: d.value } : null;
+        })
+        .filter((d): d is NonNullable<typeof d> => d !== null)
+        .sort((a, b) => a.time - b.time);
 
       lineSeries.setData(lineData);
       maSeriesRefs.current.set(ma.period, lineSeries);

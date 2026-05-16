@@ -15,7 +15,7 @@ interface Store extends AppState {
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
   loadDefaultData: () => Promise<void>;
-  loadSymbolData: (symbol: string) => Promise<void>;
+  loadSymbolData: (symbol: string, interval?: string) => Promise<void>;
   history: { code: string; name: string }[];
   addHistory: (item: { code: string; name: string }) => void;
 }
@@ -33,7 +33,7 @@ export const useStore = create<Store>((set) => ({
   klines: [],
   maLines: [],
   symbol: 'sh000001',
-  interval: 'day',
+  interval: 'Day1',
   strategyCode: '// 编写你的策略\nfunction run() {\n  return HOLD;\n}',
   strategyParams: { maFast: 5, maSlow: 10, rsi: 14 },
   isRunning: false,
@@ -65,7 +65,7 @@ export const useStore = create<Store>((set) => ({
         },
       });
       const maLines = generateMaLines(klines);
-      set({ klines, maLines, symbol: 'sh000001', interval: 'day' });
+      set({ klines, maLines, symbol: 'sh000001', interval: 'Day1' });
       
       try {
         await saveToCache(klines);
@@ -79,11 +79,12 @@ export const useStore = create<Store>((set) => ({
     }
   },
 
-  loadSymbolData: async (symbol: string) => {
+  loadSymbolData: async (symbol: string, interval?: string) => {
+    const apiInterval = interval || 'Day1';
     try {
       const klines = await loadApiData({
         symbol,
-        interval: 'Day1',
+        interval: apiInterval as 'Min5' | 'Min15' | 'Min30' | 'Day1',
         source: {
           RestApi: {
             url: 'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get',
@@ -92,7 +93,7 @@ export const useStore = create<Store>((set) => ({
         },
       });
       const maLines = generateMaLines(klines);
-      set({ klines, maLines, symbol, interval: 'day' });
+      set({ klines, maLines, symbol, interval: apiInterval });
     } catch {
       // 加载失败时不修改数据
     }

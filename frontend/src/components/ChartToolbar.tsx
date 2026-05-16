@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store';
 import { getStockName, getStockNameWithCode } from '../api/stockNames';
 
-const INTERVALS = ['5分', '15分', '30分', '日线'];
 const INDICATORS = ['MA', 'BOLL', '指标'];
 
 // 预设指数（仅保留大盘指数）
@@ -41,8 +40,17 @@ function normalizeSymbol(input: string): string {
 
 const PRESET_CODES = new Set(PRESET_SYMBOLS.map((s) => s.code));
 
+// 显示名称 → API 周期参数
+const INTERVAL_MAP: Record<string, string> = {
+  '5分': 'Min5',
+  '15分': 'Min15',
+  '30分': 'Min30',
+  '日线': 'Day1',
+};
+
+const INTERVAL_KEYS = Object.keys(INTERVAL_MAP);
+
 export function ChartToolbar() {
-  const [activeInterval, setActiveInterval] = useState('日线');
   const [activeIndicator, setActiveIndicator] = useState<string | null>(null);
   const [selectOpen, setSelectOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -50,9 +58,13 @@ export function ChartToolbar() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const symbol = useStore((s) => s.symbol);
+  const currentInterval = useStore((s) => s.interval);
   const history = useStore((s) => s.history);
   const loadSymbolData = useStore((s) => s.loadSymbolData);
   const addHistory = useStore((s) => s.addHistory);
+
+  // 根据 store 中的 interval 确定当前激活的按钮
+  const intervalLabel = INTERVAL_KEYS.find((k) => INTERVAL_MAP[k] === currentInterval) || '日线';
 
   const displayName = `${getStockName(symbol) || getStockNameWithCode(symbol)} (${formatSymbol(symbol)})`;
 
@@ -76,7 +88,7 @@ export function ChartToolbar() {
 
   function handleSelect(code: string) {
     const name = getStockName(code) || getStockNameWithCode(code);
-    loadSymbolData(code);
+    loadSymbolData(code, currentInterval);
     addHistory({ code, name });
     setSelectOpen(false);
     setInputValue('');
@@ -88,7 +100,7 @@ export function ChartToolbar() {
     const code = normalizeSymbol(raw);
     if (!/^(sh|sz)\d{6}$/.test(code) && !/^[a-z]+\d+$/.test(code)) return;
     const name = getStockName(code) || getStockNameWithCode(code);
-    loadSymbolData(code);
+    loadSymbolData(code, currentInterval);
     addHistory({ code, name });
     setSelectOpen(false);
     setInputValue('');
@@ -175,20 +187,20 @@ export function ChartToolbar() {
           )}
         </div>
 
-        <span className="text-[11px] text-[#9aa4ce]">{activeInterval}</span>
+        <span className="text-[11px] text-[#9aa4ce]">{intervalLabel}</span>
       </div>
       <div className="flex items-center gap-1.5">
-        {INTERVALS.map((interval) => (
+        {INTERVAL_KEYS.map((label) => (
           <button
-            key={interval}
-            onClick={() => setActiveInterval(interval)}
+            key={label}
+            onClick={() => loadSymbolData(symbol, INTERVAL_MAP[label])}
             className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
-              activeInterval === interval
+              intervalLabel === label
                 ? 'bg-[#7aa2f7] text-[#1a1b26]'
                 : 'bg-[#24283b] text-[#9aa4ce] hover:bg-[#363b54]'
             }`}
           >
-            {interval}
+            {label}
           </button>
         ))}
         <div className="w-px h-4 bg-[#2a2d3e] mx-1" />

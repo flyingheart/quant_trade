@@ -22,8 +22,9 @@ function getInvoke(): ((cmd: string, args?: Record<string, unknown>) => Promise<
   return null;
 }
 
-// 浏览器模式下直接调用腾讯 API
-async function loadApiDataViaFetch(config: { symbol: string; interval: string }): Promise<import('../types').KlineBar[]> {
+// 浏览器模式下直接调用 API
+// 日线使用腾讯 fqkline，分钟线使用新浪 finance API
+async function loadApiDataViaFetch(config: { symbol: string; interval: string }): Promise<KlineBar[]> {
   const intervalMap: Record<string, string> = {
     Min5: '5',
     Min15: '15',
@@ -31,13 +32,29 @@ async function loadApiDataViaFetch(config: { symbol: string; interval: string })
     Day1: 'day',
   };
   const interval = intervalMap[config.interval] || 'day';
+
+  // 分钟线 → 新浪 API
+  if (config.interval !== 'Day1') {
+    const scale = interval;
+    const url = `http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=${config.symbol}&scale=${scale}&datalen=200`;
+    const resp = await fetch(url);
+    const data: Record<string, string>[] = await resp.json();
+    return data.map((item) => ({
+      time: item.day,
+      open: parseFloat(item.open),
+      high: parseFloat(item.high),
+      low: parseFloat(item.low),
+      close: parseFloat(item.close),
+      volume: parseFloat(item.volume),
+    }));
+  }
+
+  // 日线 → 腾讯 API
   const url = `https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=${config.symbol},${interval},,,1000,qfq`;
-  
   const resp = await fetch(url);
   const json = await resp.json();
-  
-  const klines: import('../types').KlineBar[] = [];
-  // 个股使用 qfqday（前复权），指数使用 day
+
+  const klines: KlineBar[] = [];
   const rawData = json?.data?.[config.symbol];
   const dayData = rawData?.qfqday || rawData?.day;
   if (Array.isArray(dayData)) {

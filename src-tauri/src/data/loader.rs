@@ -32,10 +32,11 @@ impl DataLoader {
   /// 从 API 拉取数据
   pub async fn load_from_api(config: &DataConfig) -> Result<Vec<KlineBar>> {
     match &config.source {
-      // 腾讯财经API域名: web.ifzq.gtimg.cn
+      // 腾讯财经API（主力，已验证正确）
       super::types::DataSource::RestApi { url, .. } if url.contains("gtimg.cn") || url.contains("tencent") => {
         Self::fetch_tencent_finance(config).await
       }
+      // 通达信数据源（备用）
       super::types::DataSource::RestApi { url, .. } if url.contains("tdx") => {
         Self::fetch_tdx_kline(config).await
       }
@@ -127,35 +128,36 @@ impl DataLoader {
     Ok(klines)
   }
 
-  /// 腾讯财经 API 数据拉取（A股/港股/美股）
+  /// 腾讯财经 API 数据拉取（日线）
+  /// 分钟线使用新浪 finance API
   async fn fetch_tencent_finance(config: &DataConfig) -> Result<Vec<KlineBar>> {
-    let client = reqwest::Client::new();
-    // 腾讯API周期参数: 5/15/30 表示分钟线, day 表示日线
-    let interval_map = match config.interval {
-      Interval::Min5 => "5",
-      Interval::Min15 => "15",
-      Interval::Min30 => "30",
-      Interval::Day1 => "day",
-    };
+    match config.interval {
+      Interval::Min5 | Interval::Min15 | Interval::Min30 => {
+        Self::fetch_sina_minute(config).await
+      }
+      Interval::Day1 => {
+        let client = reqwest::Client::new();
+        let url = format!(
+          "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={},day,,,1000,qfq",
+          config.symbol
+        );
 
-    // 正确参数格式: sh000001,day,,,数量,qfq
-    // 腾讯API最大支持约1000条日线数据（约4年）
-    let url = format!(
-      "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={},{},,,1000,qfq",
-      config.symbol, interval_map
-    );
-
-    log::info!("Fetching Tencent finance data from: {}", url);
-    let resp = client.get(&url).send().await?.text().await?;
-    
-    let json: serde_json::Value = serde_json::from_str(&resp)?;
-    Self::parse_tencent_klines(&json, &config.symbol, config.interval)
+        log::info!("Fetching Tencent day data from: {}", url);
+        let resp = client.get(&url).send().await?.text().await?;
+        let json: serde_json::Value = serde_json::from_str(&resp)?;
+        Self::parse_tencent_klines(&json, &config.symbol, config.interval)
+      }
+    }
   }
 
-  /// 通达信 K 线数据拉取（A股）- 使用腾讯财经 API 作为替代
+  /// 通达信 K 线数据拉取（A股）- 使用 rustdx-complete
   async fn fetch_tdx_kline(config: &DataConfig) -> Result<Vec<KlineBar>> {
-    // A股也使用腾讯财经API获取数据
-    Self::fetch_tencent_finance(config).await
+    let symbol = config.symbol.clone();
+    let interval = config.interval;
+    tokio::task::spawn_blocking(move || {
+      super::tdx::fetch_tdx_klines(&symbol, interval)
+    })
+    .await?
   }
 
   /// 辅助函数：从 JSON 值中解析浮点数（支持字符串和数字格式）
@@ -241,6 +243,54 @@ impl DataLoader {
             }
           }
         }
+      }
+    }
+
+    Ok(klines)
+  }
+
+  /// 新浪财经分钟线 API
+  async fn fetch_sina_minute(config: &DataConfig) -> Result<Vec<KlineBar>> {
+    let scale = match config.interval {
+      Interval::Min5 => "5",
+      Interval::Min15 => "15",
+      Interval::Min30 => "30",
+      _ => "5",
+    };
+    let url = format!(
+      "http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol={}&scale={}&datalen=200",
+      config.symbol, scale
+    );
+
+    log::info!("Fetching Sina minute data from: {}", url);
+    let client = reqwest::Client::new();
+    let resp = client.get(&url).send().await?.text().await?;
+    let json: Vec<serde_json::Value> = serde_json::from_str(&resp)?;
+    Self::parse_sina_klines(&json, &config.symbol, config.interval)
+  }
+
+  /// 解析新浪分钟线数据
+  fn parse_sina_klines(
+    items: &[serde_json::Value],
+    symbol: &str,
+    interval: Interval,
+  ) -> Result<Vec<KlineBar>> {
+    let mut klines = Vec::new();
+
+    for item in items {
+      let timestamp = item.get("day").and_then(|v| v.as_str()).unwrap_or("");
+      let open = Self::parse_f64(item.get("open").unwrap_or(&serde_json::Value::Null));
+      let high = Self::parse_f64(item.get("high").unwrap_or(&serde_json::Value::Null));
+      let low = Self::parse_f64(item.get("low").unwrap_or(&serde_json::Value::Null));
+      let close = Self::parse_f64(item.get("close").unwrap_or(&serde_json::Value::Null));
+      let volume = Self::parse_f64(item.get("volume").unwrap_or(&serde_json::Value::Null));
+
+      if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(timestamp, "%Y-%m-%d %H:%M:%S") {
+        klines.push(KlineBar::new(
+          chrono::DateTime::from_naive_utc_and_offset(dt, chrono::Utc),
+          open, high, low, close, volume,
+          symbol.to_string(), interval,
+        ));
       }
     }
 
