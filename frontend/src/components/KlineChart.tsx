@@ -136,9 +136,21 @@ export function KlineChart() {
         candlestickSeriesRef.current = candlestickSeries;
         setChartReady(true);
       }, 100);
+
+      // 保存引用以便清理
+      (chartRef.current as any)._observer = observer;
     });
 
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      if (chartRef.current) {
+        const observer = (chartRef.current as any)._observer;
+        if (observer) {
+          observer.disconnect();
+        }
+        chartRef.current.remove();
+      }
+    };
   }, [handleCrosshairMove]);
 
   useEffect(() => {
@@ -148,7 +160,9 @@ export function KlineChart() {
 
     const klineMap = new Map<string, KlineBar>();
     const timeIndex = new Map<string, number>();
-    const sorted = [...klines].sort((a, b) => a.time.localeCompare(b.time));
+    const sorted = [...klines].sort((a, b) => 
+      new Date(a.time).getTime() - new Date(b.time).getTime()
+    );
 
     const candleData = sorted.map((k, i) => {
       const time = i as UTCTimestamp;

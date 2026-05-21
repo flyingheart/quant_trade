@@ -36,22 +36,30 @@ export function generateMockKlines(count = 1000): KlineBar[] {
 }
 
 /**
- * 计算移动平均线
+ * 计算移动平均线 (滑动窗口优化，O(n)复杂度)
  */
 export function calculateMA(klines: KlineBar[], period: number): MaLine['data'] {
   const result: MaLine['data'] = [];
-
-  for (let i = period - 1; i < klines.length; i++) {
-    let sum = 0;
-    for (let j = 0; j < period; j++) {
-      sum += klines[i - j].close;
-    }
+  if (klines.length < period) return result;
+  
+  let sum = 0;
+  for (let i = 0; i < period; i++) {
+    sum += klines[i].close;
+  }
+  
+  result.push({
+    time: klines[period - 1].time,
+    value: parseFloat((sum / period).toFixed(2)),
+  });
+  
+  for (let i = period; i < klines.length; i++) {
+    sum = sum - klines[i - period].close + klines[i].close;
     result.push({
       time: klines[i].time,
       value: parseFloat((sum / period).toFixed(2)),
     });
   }
-
+  
   return result;
 }
 

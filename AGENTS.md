@@ -117,3 +117,28 @@ quant_trade/
     └── 项目进度管理.md
 ```
 
+***
+
+## 📝 代码优化记录
+
+### 2026-05-22 - 代码质量优化
+
+| 序号 | 优化项 | 优先级 | 文件 | 说明 |
+|------|--------|--------|------|------|
+| 1 | 数据库路径硬编码修复 | 高 | `src-tauri/src/lib.rs` | 使用 Tauri 应用数据目录存储数据库，避免权限和跨平台问题 |
+| 2 | K线数据排序修复 | 高 | `frontend/src/components/KlineChart.tsx` | 使用 Date 对象比较时间，替代字符串 localeCompare |
+| 3 | MA计算算法优化 | 中 | `frontend/src/utils/mockData.ts` | 滑动窗口优化，从 O(n*p) 降为 O(n) |
+| 4 | 内存泄漏修复 | 中 | `frontend/src/components/KlineChart.tsx` | 正确清理 ResizeObserver 和 chart 实例 |
+| 5 | Tokio依赖优化 | 低 | `src-tauri/Cargo.toml` | 仅启用必要特性，减小二进制体积 |
+| 6 | 代码重复抽取 | 低 | `frontend/src/store/index.ts` | 抽取 `fetchAndProcessKlines` 辅助函数 |
+
+### 后端优化要点
+- 应用数据目录使用 `app.path().app_data_dir()` 获取
+- 确保目录存在后再创建数据库文件
+
+### 前端优化要点
+- 所有时间排序使用 Date 对象转换
+- 滑动窗口算法适用于大量数据场景
+- 组件卸载时必须清理所有订阅和观察者
+
+

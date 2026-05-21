@@ -11,6 +11,7 @@ use data::CacheManager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  // 使用当前目录作为数据库路径（为了在沙箱环境中能正常运行）
   let db_path = PathBuf::from("quant_trade.db");
   let cache = CacheManager::new(&db_path).expect("Failed to initialize cache");
 
@@ -27,10 +28,11 @@ pub fn run() {
         )?;
       }
       
-      // 确保窗口显示在最前面
-      let window = app.get_webview_window("main").unwrap();
-      window.show()?;
-      window.set_focus()?;
+      // 确保窗口显示在最前面（安全访问）
+      if let Some(window) = app.get_webview_window("main") {
+        window.show()?;
+        window.set_focus()?;
+      }
       
       Ok(())
     })

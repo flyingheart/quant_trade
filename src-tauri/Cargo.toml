@@ -25,7 +25,7 @@ tauri = { version = "2.11.1", features = [] }
 tauri-plugin-log = "2"
 
 # 异步运行时
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time"] }
 
 # 向量化计算
 polars = { version = "0.44", features = ["lazy", "json", "parquet", "csv", "temporal"] }

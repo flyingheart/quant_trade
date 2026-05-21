@@ -29,6 +29,22 @@ const savedHistory = (() => {
   }
 })();
 
+// 辅助函数：从API加载并处理K线数据
+async function fetchAndProcessKlines(symbol: string, interval: string) {
+  const klines = await loadApiData({
+    symbol,
+    interval: interval as 'Min5' | 'Min15' | 'Min30' | 'Day1',
+    source: {
+      RestApi: {
+        url: 'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get',
+        api_key: null,
+      },
+    },
+  });
+  const maLines = generateMaLines(klines);
+  return { klines, maLines };
+}
+
 export const useStore = create<Store>((set) => ({
   klines: [],
   maLines: [],
@@ -54,17 +70,7 @@ export const useStore = create<Store>((set) => ({
 
   loadDefaultData: async () => {
     try {
-      const klines = await loadApiData({
-        symbol: 'sh000001',
-        interval: 'Day1',
-        source: {
-          RestApi: {
-            url: 'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get',
-            api_key: null,
-          },
-        },
-      });
-      const maLines = generateMaLines(klines);
+      const { klines, maLines } = await fetchAndProcessKlines('sh000001', 'Day1');
       set({ klines, maLines, symbol: 'sh000001', interval: 'Day1' });
       
       try {
@@ -82,17 +88,7 @@ export const useStore = create<Store>((set) => ({
   loadSymbolData: async (symbol: string, interval?: string) => {
     const apiInterval = interval || 'Day1';
     try {
-      const klines = await loadApiData({
-        symbol,
-        interval: apiInterval as 'Min5' | 'Min15' | 'Min30' | 'Day1',
-        source: {
-          RestApi: {
-            url: 'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get',
-            api_key: null,
-          },
-        },
-      });
-      const maLines = generateMaLines(klines);
+      const { klines, maLines } = await fetchAndProcessKlines(symbol, apiInterval);
       set({ klines, maLines, symbol, interval: apiInterval });
     } catch {
       // 加载失败时不修改数据
