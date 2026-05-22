@@ -119,6 +119,35 @@ quant_trade/
 
 ***
 
+## 🪟 无边框窗口实现架构
+
+Tauri 2.0 无边框窗口采用**三层架构**：
+
+| 层 | 职责 | 关键文件 |
+|----|------|----------|
+| 配置层 | `tauri.conf.json` 关闭原生装饰 + 透明背景 | `src-tauri/tauri.conf.json` |
+| 前端层 | 自定义标题栏 + `data-tauri-drag-region` 拖拽 | `frontend/src/components/TopBar.tsx` |
+| 后端层 | macOS CALayer 圆角裁切 (objc2) / Windows 阴影 | `src-tauri/src/lib.rs` |
+
+### 关键机制
+
+- **拖拽区域**：`data-tauri-drag-region` 声明可拖拽区，`data-tauri-no-drag` 阻止事件穿透
+- **窗口状态**：`getCurrentWindow().isMaximized()` + `onResized` 监听，控制最大化/还原图标切换
+- **控制按钮**：最小化/最大化还原/关闭，SVG 图标配色 `#f7768e`(红)/`#9aa4ce`(灰)
+- **平台差异**：macOS 通过 `objc2` 操作 NSView CALayer 裁切 16px 圆角；Windows 调用 `set_shadow(true)` 保留阴影
+- **背景保护**：前端 `index.css` 设 `border-radius: 16px` + `background: transparent`；`index.html` 设深色背景防闪烁
+
+### 实现要点
+
+- `decorations: false` + `transparent: true` 配合，缺一不可
+- CSS 圆角仅裁切 webview 内容；macOS 必须用原生 CALayer 裁切窗口层，否则四角露白
+- `ns_window()` 需在 `setup` 回调中调用（窗口已初始化），过早调用获取不到指针
+- `user-select: none` 全局禁止选中，仅 `input/textarea/select` 恢复（`user-select: auto`）
+- 用户禁止选中需要在 CSS 也禁止，否则标题双击会选中文字
+- `@tauri-apps/api` 前端依赖 + 窗口操作权限声明缺一不可
+
+***
+
 ## 📝 代码优化记录
 
 ### 2026-05-22 - 代码质量优化
