@@ -12,9 +12,9 @@ body,
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
+  background: #0d0e15 !important;
 }
 
-/* 允许输入框、文本域等元素被选中 */
 input,
 textarea,
 select {

@@ -62,7 +62,7 @@ export function Layout() {
   const effectiveRightWidth = rightPanelCollapsed ? 0 : rightWidth;
 
   return (
-    <div className="w-full h-full flex flex-col gap-2 p-3 bg-[#0d0e15]" ref={containerRef}>
+    <div className="w-full h-full flex flex-col gap-2 p-3 overflow-hidden" ref={containerRef}>
       <TopBar />
 
       <div className="flex-1 flex gap-0 min-h-0">
