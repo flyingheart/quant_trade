@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>22大全指标手风琴拖拽量化沙盒</title>
+        <style>
+            :root {
+                --bg-main: #0c0e12;
+                --bg-panel: #141923;
+                --bg-accordion: #1b2232;
+                --bg-card: #252e42;
+                --bg-input: #2d3851;
+                --border-color: #354363;
+                --text-main: #e2e8f5;
+                --text-muted: #7688a6;
+                --color-buy: #00c076;
+                --color-sell: #f23645;
+                --color-condition: #ffb020;
+            }
+
+            body {
+                background-color: var(--bg-main);
+                color: var(--text-main);
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                margin: 0;
+                padding: 20px;
+                display: flex;
+                gap: 20px;
+                justify-content: center;
+            }
+
+            /* 完美宽画布：960px */
+            .sandbox-container {
+                display: flex;
+                width: 960px;
+                height: 680px;
+                background: var(--bg-panel);
+                border: 1px solid var(--border-color);
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            }
+
+            /* ==================== 左侧：手风琴指标货架 ==================== */
+            .blocks-shelf {
+                width: 320px;
+                background: rgba(0, 0, 0, 0.2);
+                border-right: 1px solid var(--border-color);
+                display: flex;
+                flex-direction: column;
+            }
+            .shelf-header {
+                padding: 16px;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .shelf-header h4 {
+                margin: 0;
+                font-size: 14px;
+            }
+            .shelf-header p {
+                margin: 4px 0 0 0;
+                font-size: 11px;
+                color: var(--text-muted);
+            }
+
+            .shelf-scroll-area {
+                flex: 1;
+                overflow-y: auto;
+                padding: 12px;
+            }
+
+            /* 手风琴条目 */
+            .accordion-item {
+                border: 1px solid var(--border-color);
+                border-radius: 6px;
+                margin-bottom: 8px;
+                overflow: hidden;
+                background: rgba(255, 255, 255, 0.01);
+            }
+            .accordion-header {
+                padding: 10px 12px;
+                background: rgba(255, 255, 255, 0.02);
+                cursor: pointer;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                user-select: none;
+                font-size: 12px;
+                font-weight: 600;
+            }
+            .accordion-header:hover {
+                background: rgba(255, 255, 255, 0.05);
+            }
+            .accordion-arrow {
+                font-size: 10px;
+                color: var(--text-muted);
+            }
+
+            .accordion-content {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.25s ease-out;
+                background: rgba(0, 0, 0, 0.15);
+                padding: 0 8px;
+            }
+
+            /* 原始小积木 */
+            .quant-block {
+                background: var(--bg-card);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                padding: 8px 12px;
+                border-radius: 4px;
+                font-size: 12px;
+                cursor: grab;
+                user-select: none;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin: 8px 0;
+                transition: border-color 0.15s;
+            }
+            .quant-block:hover {
+                border-color: var(--color-condition);
+                background: rgba(255, 255, 255, 0.03);
+            }
+            .quant-block:active {
+                cursor: grabbing;
+            }
+            .block-alias {
+                font-size: 10px;
+                font-family: monospace;
+                color: var(--text-muted);
+            }
+
+            /* ==================== 右侧：量化策略逻辑池 ==================== */
+            .strategy-pool-zone {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
+            .pool-header {
+                padding: 16px;
+                border-bottom: 1px solid var(--border-color);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .pool-drop-area {
+                flex: 1;
+                background: var(--bg-accordion);
+                margin: 16px;
+                border: 2px dashed #42557c;
+                border-radius: 12px;
+                padding: 16px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                position: relative;
+            }
+            .pool-drop-area.drag-over {
+                background: rgba(255, 176, 32, 0.02);
+                border-color: var(--color-condition);
+            }
+
+            .pool-placeholder {
+                position: absolute;
+                top: 45%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: var(--text-muted);
+                font-size: 13px;
+                text-align: center;
+                line-height: 2;
+                pointer-events: none;
+            }
+
+            /* 掉入池子后孵化出的高级配置卡片 */
+            .activated-card {
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-left: 4px solid var(--color-condition);
+                border-radius: 6px;
+                padding: 12px 14px;
+                animation: slideIn 0.2s ease-out;
+            }
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(6px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .card-meta {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+            .card-title {
+                font-size: 13px;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .card-title-alias {
+                font-size: 10px;
+                font-family: monospace;
+                color: var(--text-muted);
+                background: rgba(0, 0, 0, 0.2);
+                padding: 1px 4px;
+                border-radius: 3px;
+            }
+            .remove-btn {
+                cursor: pointer;
+                color: var(--text-muted);
+                font-size: 11px;
+            }
+            .remove-btn:hover {
+                color: var(--color-sell);
+            }
+
+            /* 纯鼠标链式工作流行 */
+            .interactive-flow {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: center;
+                font-size: 12px;
+            }
+
+            select,
+            input[type="range"] {
+                background: var(--bg-input);
+                border: 1px solid var(--border-color);
+                color: var(--text-main);
+                padding: 4px 6px;
+                border-radius: 4px;
+                font-size: 11px;
+                cursor: pointer;
+                outline: none;
+            }
+            .slider-wrapper {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .slider-val {
+                font-family: monospace;
+                color: var(--color-condition);
+                font-weight: bold;
+                min-width: 14px;
+            }
+
+            select.sig-dir.buy {
+                color: var(--color-buy);
+                border-color: rgba(0, 192, 118, 0.3);
+                background: rgba(0, 192, 118, 0.05);
+                font-weight: bold;
+            }
+            select.sig-dir.sell {
+                color: var(--color-sell);
+                border-color: rgba(242, 54, 69, 0.3);
+                background: rgba(242, 54, 69, 0.05);
+                font-weight: bold;
+            }
+
+            .pool-footer {
+                padding: 14px 20px;
+                border-top: 1px solid var(--border-color);
+                background: rgba(0, 0, 0, 0.15);
+                display: flex;
+                justify-content: flex-end;
+            }
+            .btn {
+                padding: 10px 24px;
+                border-radius: 4px;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                border: none;
+                background: var(--color-buy);
+                color: #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="sandbox-container">
+            <div class="blocks-shelf">
+                <div class="shelf-header">
+                    <h4>量化因子积木架 (22大常用指标)</h4>
+                    <p>展开分类，把指标积木拖拽到右侧池子中</p>
+                </div>
+
+                <div class="shelf-scroll-area">
+                    <div class="accordion-item">
+                        <div
+                            class="accordion-header"
+                            onclick="toggleAccordion(this)"
+                        >
+                            <span>📈 趋势追踪型布局 (6个)</span
+                            ><span class="accordion-arrow">▼</span>
+                        </div>
+                        <div
+                            class="accordion-content"
+                            style="max-height: 300px"
+                        >
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="MA"
+                            >
+                                <span>MA 移动平均线</span
+                                ><span class="block-alias">ma</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="MACD"
+                            >
+                                <span>MACD 指数异同</span
+                                ><span class="block-alias">macd</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="EMA"
+                            >
+                                <span>EMA 指数加权均线</span
+                                ><span class="block-alias">ema</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="HMA"
+                            >
+                                <span>HMA 赫尔光滑均线</span
+                                ><span class="block-alias">hma</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="SAR"
+                            >
+                                <span>SAR 抛物线转向</span
+                                ><span class="block-alias">sar</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="DMI"
+                            >
+                                <span>DMI 趋向指标</span
+                                ><span class="block-alias">dmi</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <div
+                            class="accordion-header"
+                            onclick="toggleAccordion(this)"
+                        >
+                            <span>⚡ 动量振荡型布局 (5个)</span
+                            ><span class="accordion-arrow">▶</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="RSI"
+                            >
+                                <span>RSI 相对强弱指标</span
+                                ><span class="block-alias">rsi</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="KDJ"
+                            >
+                                <span>KDJ 随机指标</span
+                                ><span class="block-alias">kdj</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="CCI"
+                            >
+                                <span>CCI 顺势通道指标</span
+                                ><span class="block-alias">cci</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="WR"
+                            >
+                                <span>WR 威廉指标</span
+                                ><span class="block-alias">willr</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="BIAS"
+                            >
+                                <span>BIAS 乖离率因子</span
+                                ><span class="block-alias">bias</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <div
+                            class="accordion-header"
+                            onclick="toggleAccordion(this)"
+                        >
+                            <span>📦 波动压力轨道布局 (4个)</span
+                            ><span class="accordion-arrow">▶</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="BOLL"
+                            >
+                                <span>BOLL 布林带通道</span
+                                ><span class="block-alias">boll</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="ATR"
+                            >
+                                <span>ATR 真实波幅均值</span
+                                ><span class="block-alias">atr</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="KC"
+                            >
+                                <span>KC 肯特纳压力道</span
+                                ><span class="block-alias">kc</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="DC"
+                            >
+                                <span>DC 唐奇安海龟道</span
+                                ><span class="block-alias">dc</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <div
+                            class="accordion-header"
+                            onclick="toggleAccordion(this)"
+                        >
+                            <span>📊 成交量资金流布局 (4个)</span
+                            ><span class="accordion-arrow">▶</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="OBV"
+                            >
+                                <span>OBV 能量潮因子</span
+                                ><span class="block-alias">obv</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="VWAP"
+                            >
+                                <span>VWAP 成交量权重线</span
+                                ><span class="block-alias">vwap</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="CMF"
+                            >
+                                <span>CMF 蔡金资金流</span
+                                ><span class="block-alias">cmf</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="MFI"
+                            >
+                                <span>MFI 资金流量指标</span
+                                ><span class="block-alias">mfi</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <div
+                            class="accordion-header"
+                            onclick="toggleAccordion(this)"
+                        >
+                            <span>🔮 高阶复合模型布局 (3个)</span
+                            ><span class="accordion-arrow">▶</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="Pivot"
+                            >
+                                <span>Pivot Points 枢轴点</span
+                                ><span class="block-alias">pivot</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="BBI"
+                            >
+                                <span>BBI 多空综合指数</span
+                                ><span class="block-alias">bbi</span>
+                            </div>
+                            <div
+                                class="quant-block"
+                                draggable="true"
+                                data-type="TRIX"
+                            >
+                                <span>TRIX 三重平滑平均</span
+                                ><span class="block-alias">trix</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="strategy-pool-zone">
+                <div class="pool-header">
+                    <span style="font-size: 14px; font-weight: 600"
+                        >多因子复合策略池 (低代码沙盒)</span
+                    >
+                    <span
+                        style="font-size: 11px; color: var(--text-muted)"
+                        id="pool-count"
+                        >池内包含 0 个活动组件</span
+                    >
+                </div>
+
+                <div class="pool-drop-area" id="drop-zone">
+                    <div class="pool-placeholder" id="placeholder">
+                        📥 从左侧展开分类，将任意技术指标积木<br />拖拽并投掷到该池子中，即可纯鼠标组装量化逻辑
+                    </div>
+                </div>
+
+                <div class="pool-footer">
+                    <button class="btn" onclick="readAndCompilePool()">
+                        解析池子并编译量化策略树
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const dropZone = document.getElementById("drop-zone");
+            const placeholder = document.getElementById("placeholder");
+            const poolCount = document.getElementById("pool-count");
+            let activeDraggedType = null;
+
+            // 1. 手风琴丝滑开合
+            function toggleAccordion(header) {
+                const content = header.nextElementSibling;
+                const arrow = header.querySelector(".accordion-arrow");
+                if (
+                    content.style.maxHeight &&
+                    content.style.maxHeight !== "0px"
+                ) {
+                    content.style.maxHeight = "0px";
+                    arrow.innerText = "▶";
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                    arrow.innerText = "▼";
+                }
+            }
+
+            // 2. 绑定拖拽原力
+            document.querySelectorAll(".quant-block").forEach((block) => {
+                block.addEventListener("dragstart", (e) => {
+                    activeDraggedType = block.getAttribute("data-type");
+                    e.dataTransfer.setData("text/plain", activeDraggedType);
+                });
+            });
+
+            dropZone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                dropZone.classList.add("drag-over");
+            });
+            dropZone.addEventListener("dragleave", () => {
+                dropZone.classList.remove("drag-over");
+            });
+
+            // 3. 💥 核心：落入池子，孵化激活态完整配置卡片
+            dropZone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                dropZone.classList.remove("drag-over");
+                const type =
+                    e.dataTransfer.setData("text/plain", activeDraggedType) ||
+                    activeDraggedType;
+                if (type) {
+                    spawnActivatedCard(type);
+                    updatePoolStatus();
+                }
+            });
+
+            // 4. 指标卡片工厂：根据不同的积木，智能吐出最精准的自然语言点选流
+            function spawnActivatedCard(type) {
+                placeholder.style.display = "none";
+                const card = document.createElement("div");
+                card.className = "activated-card";
+                card.setAttribute("data-indicator", type);
+
+                // 根据不同的量化集群，定制化卡片内部的表达式槽
+                if (type === "MA" || type === "EMA" || type === "HMA") {
+                    card.innerHTML = `
+                    <div class="card-meta"><span class="card-title">📈 ${type} 均线因子 <span class="card-title-alias">trend_line</span></span><span class="remove-btn" onclick="destroyCard(this)">✕ 移出池子</span></div>
+                    <div class="interactive-flow">
+                        <span>主周期:</span>
+                        <div class="slider-wrapper"><input type="range" min="5" max="250" value="20" oninput="this.nextElementSibling.innerText=this.value"><span class="slider-val">20</span></div>
+                        <span>当 最新价格</span>
+                        <select class="logic-op"><option value="cross_over">金叉上穿 ↗</option><option value="cross_under">死叉下破 ↘</option><option value=">">大于 (>)</option></select>
+                        <span>该均线时 $\rightarrow$ 发出</span>
+                        <select class="sig-dir buy" onchange="this.className='sig-dir ' + this.value"><option value="buy">买入信号 🟢</option><option value="sell">卖出信号 🔴</option></select>
+                    </div>`;
+                } else if (
+                    type === "RSI" ||
+                    type === "KDJ" ||
+                    type === "CCI" ||
+                    type === "WR"
+                ) {
+                    let defaultThreshold =
+                        type === "RSI" ? "20" : type === "KDJ" ? "0" : "-100";
+                    card.innerHTML = `
+                    <div class="card-meta"><span class="card-title">⚡ ${type} 动量振荡因子 <span class="card-title-alias">oscillator</span></span><span class="remove-btn" onclick="destroyCard(this)">✕ 移出池子</span></div>
+                    <div class="interactive-flow">
+                        <span>回溯视窗:</span>
+                        <div class="slider-wrapper"><input type="range" min="2" max="30" value="14" oninput="this.nextElementSibling.innerText=this.value"><span class="slider-val">14</span></div>
+                        <span>指标线数值</span>
+                        <select class="logic-op"><option value="<">跌破 (<)</option><option value=">">突破 (>)</option></select>
+                        <select class="num-threshold"><option value="${defaultThreshold}">${defaultThreshold} (极值超卖区)</option><option value="50">50 (强弱分水岭)</option></select>
+                        <span>$\rightarrow$ 发出</span>
+                        <select class="sig-dir buy" onchange="this.className='sig-dir ' + this.value"><option value="buy">买入信号 🟢</option><option value="sell">卖出信号 🔴</option></select>
+                    </div>`;
+                } else if (type === "BOLL" || type === "DC" || type === "KC") {
+                    card.innerHTML = `
+                    <div class="card-meta"><span class="card-title">📦 ${type} 波动轨道因子 <span class="card-title-alias">channel_bound</span></span><span class="remove-btn" onclick="destroyCard(this)">✕ 移出池子</span></div>
+                    <div class="interactive-flow">
+                        <span>价格</span>
+                        <select class="logic-op"><option value="break_upper">向上突破上轨 ↗</option><option value="break_lower">跌破下轨 ↘</option><option value="touch_mid">触碰中轨支撑</option></select>
+                        <span>时 $\rightarrow$ 判定为</span>
+                        <select class="sig-dir buy" onchange="this.className='sig-dir ' + this.value"><option value="buy">买入信号 🟢</option><option value="sell">卖出信号 🔴</option></select>
+                    </div>`;
+                } else {
+                    // 兜底及成交量、高阶指标模块
+                    card.innerHTML = `
+                    <div class="card-meta"><span class="card-title">🔮 ${type} 复合量价因子 <span class="card-title-alias">quant_factor</span></span><span class="remove-btn" onclick="destroyCard(this)">✕ 移出池子</span></div>
+                    <div class="interactive-flow">
+                        <span>因子触发默认方向:</span>
+                        <select class="logic-op"><option value="triggered">指标金叉/突破</option></select>
+                        <span>$\rightarrow$ 执行</span>
+                        <select class="sig-dir buy" onchange="this.className='sig-dir ' + this.value"><option value="buy">买入信号 🟢</option><option value="sell">卖出信号 🔴</option></select>
+                    </div>`;
+                }
+
+                dropZone.appendChild(card);
+            }
+
+            function destroyCard(btn) {
+                btn.closest(".activated-card").remove();
+                updatePoolStatus();
+            }
+
+            function updatePoolStatus() {
+                const cards = dropZone.querySelectorAll(".activated-card");
+                poolCount.innerText = `池内包含 ${cards.length} 个活动组件`;
+                if (cards.length === 0) placeholder.style.display = "block";
+            }
+
+            // 5. 🔥 终极一键读取：抽取整个池子里被鼠标配置好的指标逻辑网
+            function readAndCompilePool() {
+                const cards = dropZone.querySelectorAll(".activated-card");
+                if (cards.length === 0) {
+                    alert(
+                        "池内没有检测到活跃指标！请先从左侧手风琴折叠货架中拖拽指标注入。",
+                    );
+                    return;
+                }
+
+                let codeManifest = [];
+                cards.forEach((card, index) => {
+                    const indicator = card.getAttribute("data-indicator");
+                    const op = card.querySelector(".logic-op").value;
+                    const signal = card.querySelector(".sig-dir").value;
+                    const slider = card.querySelector('input[type="range"]');
+                    const pValue = slider ? slider.value : "默认";
+
+                    let ruleString = `[因子 ${index + 1}] (${indicator}) -> `;
+                    if (["MA", "EMA", "HMA"].includes(indicator)) {
+                        ruleString += `当最新价 ${op === "cross_over" ? "金叉上穿" : "死叉下破"} ${indicator}(${pValue}) 均线时`;
+                    } else if (
+                        ["RSI", "KDJ", "CCI", "WR"].includes(indicator)
+                    ) {
+                        const threshold =
+                            card.querySelector(".num-threshold").value;
+                        ruleString += `当 ${indicator}(窗口:${pValue}) 的数值 ${op} 阈值 ${threshold} 时`;
+                    } else if (["BOLL", "DC", "KC"].includes(indicator)) {
+                        ruleString += `当K线价格触发 [${op}] 通道边界时`;
+                    } else {
+                        ruleString += `当满足该因子核心交叉条件时`;
+                    }
+
+                    ruleString += ` ⚡ 触发 -> 【${signal === "buy" ? "🟢 做多买入" : "🔴 做空卖出"}】`;
+                    codeManifest.push(ruleString);
+                });
+
+                alert(
+                    `【低代码画布策略读取成功！】\n\n${codeManifest.join("\n")}\n\n正在将上述拖拽逻辑网序列化，生成多因子量化交易树并注入运行引擎...`,
+                );
+            }
+        </script>
+    </body>
+</html>

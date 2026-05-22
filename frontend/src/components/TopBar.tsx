@@ -2,9 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../store';
 
 export function TopBar() {
-  const leftPanelCollapsed = useStore((s) => s.leftPanelCollapsed);
   const rightPanelCollapsed = useStore((s) => s.rightPanelCollapsed);
-  const toggleLeftPanel = useStore((s) => s.toggleLeftPanel);
   const toggleRightPanel = useStore((s) => s.toggleRightPanel);
   const [status] = useState<'ready' | 'running' | 'error'>('ready');
 
@@ -31,17 +29,6 @@ export function TopBar() {
         </button>
         <button className="w-8 h-8 rounded-md flex items-center justify-center bg-[#24283b] text-[#9aa4ce] border border-[#363b54] hover:bg-[#363b54] hover:text-[#c0caf5] transition-all text-sm" title="设置">
           ⚙️
-        </button>
-        <button
-          onClick={toggleLeftPanel}
-          className={`w-8 h-8 rounded-md flex items-center justify-center transition-all text-sm ${
-            !leftPanelCollapsed
-              ? 'bg-[#7aa2f7] text-[#1a1b26] border border-[#7aa2f7]'
-              : 'bg-[#24283b] text-[#9aa4ce] border border-[#363b54] hover:bg-[#363b54] hover:text-[#c0caf5]'
-          }`}
-          title="切换参数面板"
-        >
-          ◧
         </button>
         <button
           onClick={toggleRightPanel}

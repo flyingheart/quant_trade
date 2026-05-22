@@ -47,6 +47,5 @@ export interface AppState {
   result: BacktestResult | null;
   error: string | null;
   activeTab: ActiveTab;
-  leftPanelCollapsed: boolean;
   rightPanelCollapsed: boolean;
 }

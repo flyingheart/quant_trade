@@ -107,24 +107,7 @@
       min-height: 0;
     }
 
-    /* 左侧面板 */
-    .left-panel {
-      width: 280px;
-      background: linear-gradient(180deg, #1a1b26 0%, #1f2335 100%);
-      border-radius: 8px;
-      padding: 14px;
-      overflow-y: auto;
-      border: 1px solid #2a2d3e;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      flex-shrink: 0;
-    }
 
-    .left-panel.collapsed {
-      width: 0;
-      padding: 0;
-      opacity: 0;
-      overflow: hidden;
-    }
 
     .panel-header {
       display: flex;
@@ -557,7 +540,7 @@
 
     /* 右侧面板 */
     .right-panel {
-      width: 340px;
+      width: 380px;
       background: linear-gradient(180deg, #1a1b26 0%, #1f2335 100%);
       border-radius: 8px;
       display: flex;
@@ -597,8 +580,15 @@
       border-bottom-color: #7aa2f7;
     }
 
-    .code-area {
+    #editorContent {
       flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .code-area {
       background: #0d0e15;
       padding: 12px;
       color: #c0caf5;
@@ -608,7 +598,8 @@
       resize: none;
       outline: none;
       border: none;
-      min-height: 0;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .code-area::selection {
@@ -869,8 +860,15 @@
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
     }
 
     /* 空状态 */
@@ -892,12 +890,10 @@
 
     /* 响应式 */
     @media (max-width: 1200px) {
-      .left-panel {
-        width: 240px;
-      }
       .right-panel {
-        width: 280px;
+        width: 320px;
       }
+
       .stat-grid {
         grid-template-columns: repeat(3, 1fr);
       }
@@ -919,122 +915,12 @@
         <button class="btn-icon" title="导入数据" onclick="alert('导入数据')">📁</button>
         <button class="btn-icon" title="策略库" onclick="alert('策略库')">📚</button>
         <button class="btn-icon" title="设置" onclick="alert('设置')">⚙️</button>
-        <button class="btn-icon" id="btnLeftPanel" title="切换参数面板" onclick="toggleLeftPanel()">◧</button>
         <button class="btn-icon" id="btnRightPanel" title="切换编辑器" onclick="toggleRightPanel()">▣</button>
       </div>
     </div>
 
     <!-- 主内容区 -->
     <div class="main">
-      <!-- 左侧参数面板 -->
-      <div class="left-panel" id="leftPanel">
-        <div class="panel-header">
-          <span class="panel-title">参数配置</span>
-          <span class="panel-badge">Auto-UI</span>
-        </div>
-
-        <!-- 基础设置 -->
-        <div class="form-group">
-          <div class="form-label">
-            <span>交易标的</span>
-          </div>
-          <select class="form-select">
-            <option>贵州茅台 (600519)</option>
-            <option>腾讯控股 (00700)</option>
-            <option>Apple (AAPL)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <div class="form-label">
-            <span>初始资金</span>
-            <span class="hint">CNY</span>
-          </div>
-          <input class="form-input" type="number" value="1000000">
-        </div>
-
-        <div class="form-group">
-          <div class="form-label">
-            <span>手续费率</span>
-            <span class="hint">单边</span>
-          </div>
-          <input class="form-input" type="number" value="0.0003" step="0.0001">
-        </div>
-
-        <div class="divider"></div>
-
-        <!-- 策略参数 -->
-        <div class="form-group">
-          <div class="form-label">
-            <span>MA 快线周期</span>
-            <span class="hint">5-50</span>
-          </div>
-          <div class="slider-container">
-            <input class="slider" type="range" min="5" max="50" value="5" oninput="updateSlider(this, 'maFastVal')">
-            <span class="slider-value" id="maFastVal">5</span>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="form-label">
-            <span>MA 慢线周期</span>
-            <span class="hint">10-200</span>
-          </div>
-          <div class="slider-container">
-            <input class="slider" type="range" min="10" max="200" value="20" oninput="updateSlider(this, 'maSlowVal')">
-            <span class="slider-value" id="maSlowVal">20</span>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="form-label">
-            <span>RSI 周期</span>
-            <span class="hint">6-30</span>
-          </div>
-          <div class="slider-container">
-            <input class="slider" type="range" min="6" max="30" value="14" oninput="updateSlider(this, 'rsiVal')">
-            <span class="slider-value" id="rsiVal">14</span>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <!-- 开关 -->
-        <div class="toggle">
-          <span style="font-size: 11px; color: #9aa4ce;">启用止损</span>
-          <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
-        </div>
-
-        <div class="toggle">
-          <span style="font-size: 11px; color: #9aa4ce;">启用止盈</span>
-          <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
-        </div>
-
-        <div class="form-group" style="margin-top: 8px;">
-          <div class="form-label"><span>止损比例</span></div>
-          <input class="form-input" type="number" value="0.05" step="0.01">
-        </div>
-
-        <div class="divider"></div>
-
-        <!-- 按钮组 -->
-        <button class="btn-primary" id="btnRun" onclick="runBacktest()">
-          ▶ 运行回测
-        </button>
-        <div class="progress-container" id="progressContainer">
-          <div class="progress-header">
-            <span class="progress-text">回测进行中...</span>
-            <span class="progress-percent" id="progressPercent">0%</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill" id="progressFill"></div>
-          </div>
-        </div>
-        <button class="btn-cancel" id="btnCancel" onclick="cancelBacktest()">取消回测</button>
-        <button class="btn-secondary" onclick="resetParams()">↺ 重置参数</button>
-        <button class="btn-secondary" style="margin-top: 4px;">💾 保存配置</button>
-      </div>
-
       <!-- 中间图表区 -->
       <div class="center-panel">
         <div class="chart-toolbar">
@@ -1128,11 +1014,124 @@
       <!-- 右侧编辑器 -->
       <div class="right-panel" id="rightPanel">
         <div class="editor-tabs">
-          <div class="editor-tab active" onclick="switchEditorTab(this, 'code')">策略代码</div>
+          <div class="editor-tab" onclick="switchEditorTab(this, 'code')">策略代码</div>
           <div class="editor-tab" onclick="switchEditorTab(this, 'template')">模板库</div>
-          <div class="editor-tab" onclick="switchEditorTab(this, 'history')">历史版本</div>
+          <div class="editor-tab active" onclick="switchEditorTab(this, 'params')">参数配置</div>
         </div>
-        <div class="code-area" id="editorContent">// @param ma_fast number=5 快线周期
+        <div id="editorContent">
+          <!-- 参数配置内容 -->
+          <div id="tab-params" style="flex: 1; overflow-y: auto; padding: 14px;">
+            <div class="panel-header" style="margin-bottom: 10px;">
+              <span class="panel-title">参数配置</span>
+              <span class="panel-badge">Auto-UI</span>
+            </div>
+
+            <!-- 基础设置 -->
+            <div class="form-group">
+              <div class="form-label">
+                <span>交易标的</span>
+              </div>
+              <select class="form-select">
+                <option>贵州茅台 (600519)</option>
+                <option>腾讯控股 (00700)</option>
+                <option>Apple (AAPL)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">
+                <span>初始资金</span>
+                <span class="hint">CNY</span>
+              </div>
+              <input class="form-input" type="number" value="1000000">
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">
+                <span>手续费率</span>
+                <span class="hint">单边</span>
+              </div>
+              <input class="form-input" type="number" value="0.0003" step="0.0001">
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- 策略参数 -->
+            <div class="form-group">
+              <div class="form-label">
+                <span>MA 快线周期</span>
+                <span class="hint">5-50</span>
+              </div>
+              <div class="slider-container">
+                <input class="slider" type="range" min="5" max="50" value="5" oninput="updateSlider(this, 'maFastVal')">
+                <span class="slider-value" id="maFastVal">5</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">
+                <span>MA 慢线周期</span>
+                <span class="hint">10-200</span>
+              </div>
+              <div class="slider-container">
+                <input class="slider" type="range" min="10" max="200" value="20"
+                  oninput="updateSlider(this, 'maSlowVal')">
+                <span class="slider-value" id="maSlowVal">20</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">
+                <span>RSI 周期</span>
+                <span class="hint">6-30</span>
+              </div>
+              <div class="slider-container">
+                <input class="slider" type="range" min="6" max="30" value="14" oninput="updateSlider(this, 'rsiVal')">
+                <span class="slider-value" id="rsiVal">14</span>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- 开关 -->
+            <div class="toggle">
+              <span style="font-size: 11px; color: #9aa4ce;">启用止损</span>
+              <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+            </div>
+
+            <div class="toggle">
+              <span style="font-size: 11px; color: #9aa4ce;">启用止盈</span>
+              <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+            </div>
+
+            <div class="form-group" style="margin-top: 8px;">
+              <div class="form-label"><span>止损比例</span></div>
+              <input class="form-input" type="number" value="0.05" step="0.01">
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- 按钮组 -->
+            <button class="btn-primary" id="btnRun" onclick="runBacktest()">
+              ▶ 运行回测
+            </button>
+            <div class="progress-container" id="progressContainer">
+              <div class="progress-header">
+                <span class="progress-text">回测进行中...</span>
+                <span class="progress-percent" id="progressPercent">0%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+              </div>
+            </div>
+            <button class="btn-cancel" id="btnCancel" onclick="cancelBacktest()">取消回测</button>
+            <button class="btn-secondary" onclick="resetParams()">↺ 重置参数</button>
+            <button class="btn-secondary" style="margin-top: 4px;">💾 保存配置</button>
+          </div>
+
+          <!-- 策略代码内容 -->
+          <div id="tab-code" style="flex: 1; overflow: auto; display: none;">
+            <textarea class="code-area" style="height: 100%; border: none; outline: none;">// @param ma_fast number=5 快线周期
 // @param ma_slow number=20 慢线周期
 // @param rsi_period number=14 RSI周期
 // @param enable_stop_loss bool=true 启用止损
@@ -1152,7 +1151,32 @@ function run() {
   }
   
   return HOLD;
-}</div>
+}</textarea>
+          </div>
+
+          <!-- 模板库内容 -->
+          <div id="tab-template" style="flex: 1; overflow: auto; display: none;">
+            <textarea class="code-area" style="height: 100%; border: none; outline: none;">📚 策略模板库
+
+1. 均线交叉策略
+   - 金叉买入，死叉卖出
+   - 参数: 快线周期, 慢线周期
+
+2. RSI 超买超卖
+   - RSI < 30 买入, RSI > 70 卖出
+   - 参数: RSI周期, 超买线, 超卖线
+
+3. 布林带突破
+   - 突破上轨卖出, 突破下轨买入
+   - 参数: 周期, 标准差倍数
+
+4. MACD 策略
+   - DIF 上穿 DEA 买入
+   - 参数: 快线, 慢线, 信号线
+
+点击模板加载到编辑器</textarea>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1310,13 +1334,6 @@ function run() {
 
   <script>
     // 面板折叠切换
-    function toggleLeftPanel() {
-      const panel = document.getElementById('leftPanel');
-      const btn = document.getElementById('btnLeftPanel');
-      panel.classList.toggle('collapsed');
-      btn.classList.toggle('active');
-    }
-
     function toggleRightPanel() {
       const panel = document.getElementById('rightPanel');
       const btn = document.getElementById('btnRightPanel');
@@ -1404,63 +1421,19 @@ function run() {
     function switchEditorTab(tab, type) {
       document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      
-      const content = document.getElementById('editorContent');
-      if (type === 'code') {
-        content.textContent = `// @param ma_fast number=5 快线周期
-// @param ma_slow number=20 慢线周期
-// @param rsi_period number=14 RSI周期
-// @param enable_stop_loss bool=true 启用止损
 
-function run() {
-  const maFast = MA(CLOSE, ma_fast);
-  const maSlow = MA(CLOSE, ma_slow);
-  
-  // 金叉买入
-  if (CROSS(maFast, maSlow)) {
-    return BUY;
-  }
-  
-  // 死叉卖出
-  if (CROSS(maSlow, maFast)) {
-    return SELL;
-  }
-  
-  return HOLD;
-}`;
+      // 隐藏所有标签页
+      document.getElementById('tab-params').style.display = 'none';
+      document.getElementById('tab-code').style.display = 'none';
+      document.getElementById('tab-template').style.display = 'none';
+
+      // 显示选中的标签页
+      if (type === 'params') {
+        document.getElementById('tab-params').style.display = 'block';
+      } else if (type === 'code') {
+        document.getElementById('tab-code').style.display = 'block';
       } else if (type === 'template') {
-        content.textContent = `📚 策略模板库
-
-1. 均线交叉策略
-   - 金叉买入，死叉卖出
-   - 参数: 快线周期, 慢线周期
-
-2. RSI 超买超卖
-   - RSI < 30 买入, RSI > 70 卖出
-   - 参数: RSI周期, 超买线, 超卖线
-
-3. 布林带突破
-   - 突破上轨卖出, 突破下轨买入
-   - 参数: 周期, 标准差倍数
-
-4. MACD 策略
-   - DIF 上穿 DEA 买入
-   - 参数: 快线, 慢线, 信号线
-
-点击模板加载到编辑器`;
-      } else if (type === 'history') {
-        content.textContent = `📜 历史版本
-
-v3 (当前) - 2024-12-15 10:23
-  添加止损逻辑
-
-v2 - 2024-12-14 15:30
-  调整 MA 周期 5/20
-
-v1 - 2024-12-13 09:15
-  初始版本
-
-点击版本可回滚`;
+        document.getElementById('tab-template').style.display = 'block';
       }
     }
 
@@ -1468,7 +1441,7 @@ v1 - 2024-12-13 09:15
     function switchResultTab(tab, type) {
       document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      
+
       document.getElementById('tab-overview').style.display = type === 'overview' ? 'block' : 'none';
       document.getElementById('tab-curve').style.display = type === 'curve' ? 'block' : 'none';
       document.getElementById('tab-trades').style.display = type === 'trades' ? 'block' : 'none';
@@ -1481,7 +1454,7 @@ v1 - 2024-12-13 09:15
       const width = canvas.offsetWidth;
       const height = canvas.offsetHeight;
       const candleCount = Math.floor(width / 14);
-      
+
       let price = 100;
       for (let i = 0; i < candleCount; i++) {
         const change = (Math.random() - 0.48) * 8;
@@ -1489,14 +1462,14 @@ v1 - 2024-12-13 09:15
         const close = price + change;
         const high = Math.max(open, close) + Math.random() * 4;
         const low = Math.min(open, close) - Math.random() * 4;
-        
+
         const isUp = close >= open;
         const x = i * 14 + 3;
         const bodyTop = height - ((Math.max(open, close) - low + 20) / 140) * height;
         const bodyHeight = Math.abs(change) / 140 * height;
         const wickTop = height - ((high - low + 20) / 140) * height;
         const wickHeight = (high - low) / 140 * height;
-        
+
         const candle = document.createElement('div');
         candle.className = `candlestick ${isUp ? 'candle-up' : 'candle-down'}`;
         candle.style.left = x + 'px';
@@ -1505,7 +1478,7 @@ v1 - 2024-12-13 09:15
           <div class="candle-wick" style="height: ${wickHeight}px;"></div>
         `;
         canvas.appendChild(candle);
-        
+
         price = close;
       }
     }

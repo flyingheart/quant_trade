@@ -12,7 +12,6 @@ interface Store extends AppState {
   runBacktest: () => Promise<void>;
   resetParams: () => void;
   setActiveTab: (tab: AppState['activeTab']) => void;
-  toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
   loadDefaultData: () => Promise<void>;
   loadSymbolData: (symbol: string, interval?: string) => Promise<void>;
@@ -57,7 +56,6 @@ export const useStore = create<Store>((set) => ({
   result: null,
   error: null,
   activeTab: 'overview',
-  leftPanelCollapsed: false,
   rightPanelCollapsed: false,
   history: savedHistory,
 
@@ -133,6 +131,5 @@ export const useStore = create<Store>((set) => ({
   }),
 
   setActiveTab: (tab) => set({ activeTab: tab }),
-  toggleLeftPanel: () => set((s) => ({ leftPanelCollapsed: !s.leftPanelCollapsed })),
   toggleRightPanel: () => set((s) => ({ rightPanelCollapsed: !s.rightPanelCollapsed })),
 }));
