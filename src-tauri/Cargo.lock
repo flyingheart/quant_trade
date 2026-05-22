@@ -4622,6 +4622,7 @@ dependencies = [
  "deno_core",
  "duckdb",
  "log",
+ "objc2",
  "polars",
  "reqwest 0.12.28",
  "rustdx-complete",
