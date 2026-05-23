@@ -170,4 +170,43 @@ Tauri 2.0 无边框窗口采用**三层架构**：
 - 滑动窗口算法适用于大量数据场景
 - 组件卸载时必须清理所有订阅和观察者
 
+***
+
+## 📝 今日工作记录
+
+### 2026-05-23 - UI 视觉优化 & App 图标重设计
+
+#### 今日修改清单
+
+| 序号 | 修改项 | 优先级 | 涉及文件 | 说明 |
+|------|--------|--------|----------|------|
+| 1 | K线图颜色修复 | 高 | `frontend/src/components/KlineChart.tsx` | Canvas 不支持 CSS 变量 `var(--xxx)`，改回 hex 值 |
+| 2 | 最外层窗口边框 | 中 | `frontend/src/index.css` | `#root` 添加 `1px solid rgba(255,255,255,0.1)` 亮边界 |
+| 3 | TopBar 按钮圆角 | 低 | `frontend/src/components/TopBar.tsx` | 从 `rounded-md`→`rounded-xl`，所有按钮统一 `bg-subtle` |
+| 4 | TopBar 标题栏圆角 | 低 | `frontend/src/components/TopBar.tsx` | 添加 `rounded-xl`，四角圆润 |
+| 5 | 面板分隔条调整 | 低 | `frontend/src/components/Layout.tsx` | 宽度 `w-3`→`w-2`，滑块 `w-1.5 h-10`→`w-1 h-8` |
+| 6 | TopBar 图标替换 | 中 | `frontend/src/components/TopBar.tsx` | 字母 `Q` → 三柱 K 线蜡烛图 SVG |
+| 7 | App 图标全面更换 | 高 | `src-tauri/icons/*` + `frontend/public/favicon.svg` | 从默认 Tauri 图标→绿色 K 线蜡烛图 |
+| 8 | App 图标生成文档 | 低 | `docs/app-icon-generation-guide.md` | 踩坑总结与完整生成流程 |
+
+#### App 图标设计演进
+
+| 版本 | 背景 | 蜡烛 | 问题 |
+|------|------|------|------|
+| v1 | 绿色渐变 `#9ece6a→#b1e388` | 暗色 `#1a1b26` | 太黑看不清 ❌ |
+| v2 | 绿色 `#9ece6a` | 白色 `#ffffff` | 黑白单调 ❌ |
+| v3 | 绿色渐变（含 `linearGradient`） | 红白配 | MSVG 不支持渐变，全黑 ❌ |
+| **v4 ✅** | **纯色 `#FF6B35` 活力橙** | **白色半透明/实色** | **活泼醒目** ✅ |
+
+#### 关键踩坑记录
+
+| 问题 | 原因 | 解决 |
+|------|------|------|
+| K线图空白 | Canvas 不支持 CSS 变量 | 改回 hex 值 `#ef4444` / `#22c55e` |
+| SVG 注释导致页面崩溃 | JSX 不支持 `<!-- -->` | 删除注释 |
+| `icon is not RGBA` 编译错误 | ImageMagick 输出 `PaletteAlpha` | Python `struct+zlib` 手工构建 `color_type=6` |
+| `0 pixels supplied` 运行崩溃 | PNG 的 IDAT 缺 filter byte | 严格按 PNG 规范加 filter byte |
+| SVG 渲成全黑 | MSVG 不支持 `clip-path`/`linearGradient` | 纯色 SVG + Python 数学圆角遮罩 |
+| Dock 图标无圆角 | 裸二进制无 macOS 自动遮罩 | Python 物理裁切四角像素为透明 |
+
 

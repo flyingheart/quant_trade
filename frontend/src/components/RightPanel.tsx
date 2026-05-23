@@ -240,9 +240,9 @@ function ParamsTab() {
     const Rng = ({ min, max, def }: { min: number; max: number; def: number }) => (
       <div className="flex items-center gap-1 min-h-[26px]">
         <input type="range" min={min} max={max} defaultValue={def}
-          className="w-14 accent-[#7aa2f7] h-1.5"
+          className="w-14 accent-accent h-1.5"
           onInput={(e) => { const s = e.currentTarget.nextElementSibling; if (s) s.textContent = (e.target as HTMLInputElement).value; }} />
-        <span className="text-[#ffb020] font-bold min-w-3 text-xs">{def}</span>
+        <span className="text-accent font-bold min-w-3 text-xs">{def}</span>
       </div>
     );
 
@@ -622,8 +622,8 @@ function ParamsTab() {
         {/* 左侧：手风琴指标货架 */}
         <div className="w-[260px] flex-shrink-0 bg-[#1a1b26] rounded-lg border border-[#2a2d3e] flex flex-col overflow-hidden">
           <div className="p-3 border-b border-[#2a2d3e]">
-            <h4 className="text-sm font-semibold text-[#c0caf5]">量化因子积木架</h4>
-            <p className="text-[10px] text-[#9aa4ce] mt-1">展开分类，拖拽到右侧策略池</p>
+            <h4 className="text-sm font-semibold text-primary">量化因子积木架</h4>
+            <p className="text-[10px] text-secondary mt-1">展开分类，拖拽到右侧策略池</p>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
             {INDICATOR_GROUPS.map((group) => (
@@ -646,8 +646,8 @@ function ParamsTab() {
                         onPointerDown={(e) => handlePointerDown(e, item.type)}
                         className="flex items-center justify-between px-3 py-2 rounded bg-[#24283b] border border-[#2a2d3e] touch-none text-xs hover:border-[#ffb020] hover:bg-[rgba(255,255,255,0.03)] transition-colors"
                       >
-                        <span className="text-[#c0caf5]">{item.name}</span>
-                        <span className="text-[10px] font-mono text-[#7688a6]">{item.alias}</span>
+                        <span className="text-primary">{item.name}</span>
+                        <span className="text-[10px] font-mono text-muted">{item.alias}</span>
                       </div>
                     ))}
                   </div>
@@ -766,14 +766,14 @@ export function RightPanel() {
 
   return (
     <div className="bg-gradient-to-b from-[#1a1b26] to-[#1f2335] rounded-lg border border-[#2a2d3e] flex flex-col overflow-hidden h-full">
-      <div className="flex items-center border-b border-[#2a2d3e] flex-shrink-0">
+      <div className="flex items-center border-b border-border flex-shrink-0">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`px-3 py-2 text-xs font-medium transition-all ${activeTab === tab.key
-                ? 'text-[#7aa2f7] border-b-2 border-[#7aa2f7] bg-[#24283b]'
-                : 'text-[#9aa4ce] hover:text-[#c0caf5]'
+                ? 'text-accent border-b-2 border-accent bg-subtle'
+                : 'text-secondary hover:text-primary'
               }`}
           >
             {tab.label}
@@ -785,12 +785,12 @@ export function RightPanel() {
           <textarea
             value={strategyCode}
             onChange={(e) => setStrategyCode(e.target.value)}
-            className="w-full h-full p-3 text-xs text-[#c0caf5] font-mono bg-[#0d0e15] overflow-auto whitespace-pre-wrap resize-none outline-none focus:ring-1 focus:ring-[#7aa2f7] border-0"
+            className="w-full h-full p-3 text-xs text-primary font-mono bg-deep overflow-auto whitespace-pre-wrap resize-none outline-none focus:ring-1 focus:ring-accent border-0"
             spellCheck={false}
           />
         )}
         {activeTab === 'template' && (
-          <pre className="w-full h-full p-3 text-xs text-[#c0caf5] font-mono bg-[#0d0e15] overflow-auto whitespace-pre-wrap">
+          <pre className="w-full h-full p-3 text-xs text-primary font-mono bg-deep overflow-auto whitespace-pre-wrap">
             {TEMPLATE_CONTENT}
           </pre>
         )}

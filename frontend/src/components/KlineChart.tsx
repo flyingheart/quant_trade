@@ -85,7 +85,7 @@ export function KlineChart() {
         height: rect.height,
         layout: {
           backgroundColor: '#0d0e15',
-          textColor: '#a9b1d6',
+          textColor: '#9aa4ce',
         },
         grid: {
           vertLines: { color: '#1a1b26' },

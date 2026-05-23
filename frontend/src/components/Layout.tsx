@@ -70,7 +70,7 @@ export function Layout() {
           className="flex-1 flex flex-col min-h-0 pr-3"
           style={{ width: `calc(100% - ${effectiveRightWidth + 8}px)` }}
         >
-          <div className="flex-1 min-h-0 bg-[#1a1b26] rounded-lg border border-[#2a2d3e] overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 bg-surface rounded-lg border border-border overflow-hidden flex flex-col">
             <ChartToolbar />
             <div className="flex-1 min-h-0 relative">
               <KlineChart />
@@ -83,11 +83,11 @@ export function Layout() {
 
         {!rightPanelCollapsed && (
           <div
-            className={`w-3 cursor-col-resize flex items-center justify-center transition-colors ${isDragging ? 'bg-[#7aa2f7]' : 'hover:bg-[#363b54]'
+            className={`w-2 cursor-col-resize flex items-center justify-center transition-colors ${isDragging ? 'bg-accent' : 'hover:bg-hover'
               }`}
             onMouseDown={handleMouseDown}
           >
-            <div className="w-1.5 h-10 bg-[#545c7e] rounded-full" />
+            <div className="w-1 h-8 bg-muted rounded-full" />
           </div>
         )}
 

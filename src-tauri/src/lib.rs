@@ -46,13 +46,21 @@ fn apply_macos_rounded_corners(window: &tauri::WebviewWindow) {
         let () = msg_send![layer, setCornerRadius: 16.0f64];
         let () = msg_send![layer, setMasksToBounds: 1i8];
 
-        // 用 clearColor 设置 window + layer 背景，防止收缩白色闪烁且不破坏圆角透空
+        // NSWindow 背景设 clearColor（四角透出桌面）
+        // CALayer 背景设深色 #0d0e15（GPU 同步填充新像素，防止 resize 白闪）
+        // 然后 cornerRadius + masksToBounds 将深色裁切为圆角，裁掉的区域露出 clearColor
         if let Some(cls) = AnyClass::get(c"NSColor") {
             let clear: *mut Object = msg_send![cls, clearColor];
             if !clear.is_null() {
                 let () = msg_send![ns_window, setBackgroundColor: clear];
-                let cg: *const c_void = msg_send![clear, CGColor];
-                let () = msg_send![layer, setBackgroundColor: cg];
+
+                // 用深色 #0d0e15 设置 layer 背景 — GPU 合成层同步填充，不闪白
+                let dark: *mut Object = msg_send![cls,
+                    colorWithSRGBRed: 0.051, green: 0.055, blue: 0.082, alpha: 1.0];
+                if !dark.is_null() {
+                    let cg: *const c_void = msg_send![dark, CGColor];
+                    let () = msg_send![layer, setBackgroundColor: cg];
+                }
             }
         }
     }

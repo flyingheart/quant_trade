@@ -1,4 +1,40 @@
 @import "tailwindcss";
+@import "./styles/theme.css";
+
+@theme {
+  /* 背景层级 */
+  --color-deep: var(--bg-deep);
+  --color-surface: var(--bg-surface);
+  --color-elevated: var(--bg-elevated);
+  --color-subtle: var(--bg-subtle);
+  --color-hover: var(--bg-hover);
+
+  /* 边框 */
+  --color-border: var(--border);
+  --color-border-hover: var(--border-hover);
+
+  /* 文字 */
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-muted: var(--text-muted);
+
+  /* 🟢 强调色 */
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-dim: var(--accent-dim);
+  --color-accent-bg: var(--accent-bg);
+
+  /* 财务语义 */
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-buy: var(--buy);
+  --color-sell: var(--sell);
+
+  /* 状态 */
+  --color-ready: var(--status-ready);
+  --color-running: var(--status-running);
+  --color-error: var(--status-error);
+}
 
 html,
 body {
@@ -19,7 +55,8 @@ body {
   height: 100%;
   border-radius: 16px;
   overflow: hidden;
-  background: #0d0e15;
+  background: var(--bg-deep);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 input,

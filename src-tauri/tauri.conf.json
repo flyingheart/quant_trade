@@ -10,6 +10,7 @@
     "beforeBuildCommand": "npm run build --prefix /Volumes/SN7100/Code/Rust/quant_trade/frontend"
   },
   "app": {
+    "macOSPrivateApi": true,
     "withGlobalTauri": true,
     "windows": [
       {
